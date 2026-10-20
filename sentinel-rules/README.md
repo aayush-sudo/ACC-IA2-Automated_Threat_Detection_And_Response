@@ -14,11 +14,11 @@ enable paid plans, or call external systems.
 | Microsoft Sentinel | Verified: the workspace has a `Microsoft.SecurityInsights/onboardingStates/default` resource and a Sentinel resource. The portal-reported trial end date (2026-11-20) was supplied by the owner, not independently verified by CLI. |
 | Candidate table schemas | Verified as provisioned: `SigninLogs`, `SecurityAlert`, `AGWFirewallLogs`, and `AzureActivity` are present as Analytics tables. Table existence does not prove a connector is active. |
 | Ingested records | Checked with read-only KQL over the last 30 days: zero rows in `SigninLogs` and `SecurityAlert`; no rows returned for `AGWFirewallLogs` or `AzureActivity`. |
-| Azure Activity export | Not configured: the subscription has no Activity Log diagnostic setting. The existing built-in policy assignment is scoped to `rg-threat-detection`, but its definition targets the subscription resource; no policy state or remediation task was returned. |
+| Azure Activity export | Owner-approved correction: the ineffective resource-group assignment was replaced with a subscription-scope assignment. The new identity has Monitoring Contributor at subscription scope and Log Analytics Contributor on the workspace. Remediation `remediate-azure-activity-log` is still `Evaluating`; no subscription diagnostic setting or `AzureActivity` rows were observed yet. |
 | Defender for Cloud findings | Read-only subscription assessment list returned 16 posture assessments, 7 with `Unhealthy` status. Defender security-alert list returned 0 alerts. An unhealthy recommendation is a real posture finding, not a Sentinel alert or incident. |
 | Existing analytics rules | No `Microsoft.SecurityInsights/alertRules` resources found in the project resource group. |
 | Data connectors | No `Microsoft.SecurityInsights/dataConnectors` resources were returned by the subscription-wide read-only ARM listing. Confirm the connector status in the portal; this listing is not proof that no source integration exists by another mechanism. |
-| Detection query / analytics alert / incident | Query syntax validated against actual workspace tables; no live source rows available. The new Azure Activity query matched zero live groups; no live query result, alert, or incident was produced. |
+| Detection query / analytics alert / incident | Query syntax validated against actual workspace tables; no live source rows available. The Azure Activity query matched zero live groups; no live query result, alert, or incident was produced. |
 | Sample events and alert examples | Simulated only. No sample is presented as a real Azure event or resource. |
 | WAF and Logic Apps integration | Pending teammate-owned resources, their tenant/workspace choices, and authorized access. |
 
@@ -68,10 +68,15 @@ an approved Entra connector and a dedicated test account. The WAF rate-limit
 query additionally requires Person 1 to confirm the actual custom rule ID/name
 that represents rate limiting. The Azure Activity repeated-failure query also
 requires subscription Activity Log export to be configured; the current policy
-assignment does not provide that export because its scope does not include the
-subscription resource. The Azure Activity query's synthetic fixture returned
-one expected group of five failed operations; this is simulated output, not a
-live detection.
+assignment is now subscription-scoped, but its approved remediation is still
+evaluating and no setting or rows are verified. The Azure Activity query's
+synthetic fixture returned one expected group of five failed operations; this
+is simulated output, not a live detection. The owner approved replacing the
+resource-group policy assignment with a subscription-scoped assignment and
+granting its new identity the two roles required by the built-in definition.
+The remediation task is still evaluating; its diagnostic setting and log
+ingestion are not yet verified. Four old role-assignment records remain for
+the deleted identity; their removal is pending explicit approval.
 
 For a genuine finding that can be demonstrated now without changing the
 subscription, open **Defender for Cloud > Recommendations** and review an

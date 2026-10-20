@@ -16,11 +16,13 @@
 - [x] Prepare a dedicated-account, single-failure Entra demo query and analytics-rule settings without enabling a connector or rule.
 - [x] Inspect the Azure Activity policy assignment, compliance state, remediation tasks, identity role scopes, actual table schema, and subscription diagnostic settings read-only.
 - [x] Add a schema-based Azure Activity repeated-failure query and synthetic inline fixture; do not present it as live detection.
+- [x] After owner approval, replace the ineffective RG-scoped assignment with a subscription-scoped assignment, grant its two required roles, and start remediation.
 - [x] Document workspace setup, connectors, analytics rules, incidents, permissions, cost, and cleanup.
 - [x] Document Defender scope, findings, integration, and no-finding fallback.
 - [x] Document Person 1 / Person 3 handoffs and trigger-schema boundaries.
 - [x] Add troubleshooting, screenshot evidence checklist, and demo script.
 - [ ] Execute a detection query against nonempty real source data and validate results.
+- [ ] Verify remediation completes, the subscription diagnostic setting exists, and AzureActivity rows arrive; ask approval before removing the four orphaned role assignments.
 - [ ] Generate and verify a real Sentinel alert and incident.
 - [ ] Validate actual WAF logs and rate-limit identifier with Person 1.
 - [ ] Validate native incident trigger mapping and dry-run with Person 3.
@@ -35,15 +37,21 @@
   exist, but checks returned no rows in the last 30 days.
 - The workspace's actual `AzureActivity` schema was read with `getschema`.
   The query is based on verified columns and is prepared for repeated failed
-  Administrative events, but the subscription has no Activity Log diagnostic
-  setting and the table is empty.
-- The Activity Log policy assignment exists at the resource-group scope,
-  whereas its built-in definition targets the subscription resource and
-  deploys a subscription-level diagnostic setting. The read-only policy state
-  and remediation lists returned no rows. The assignment identity currently
-  has Monitoring Contributor and Log Analytics Contributor at the resource
-  group/workspace scopes, but no subscription-scope role. No policy,
-  diagnostic setting, role assignment, or remediation was changed.
+  Administrative events. At initial inspection, there was no subscription
+  Activity Log diagnostic setting; after the approved correction, remediation
+  is still evaluating and the table remains empty.
+- The original Activity Log assignment was at resource-group scope although
+  its built-in definition targets the subscription resource. After approval,
+  it was replaced by a subscription-scoped assignment. Its new identity has
+  Monitoring Contributor at subscription scope and Log Analytics Contributor
+  on the existing workspace.
+- Remediation `remediate-azure-activity-log` was accepted and remains in
+  `Evaluating` state. The latest check found no subscription diagnostic
+  setting and no `AzureActivity` rows, so export and ingestion are not yet
+  verified. No Sentinel rule or alert was created.
+- Deleting the original assignment removed its system-assigned identity, but
+  four old role-assignment records remain for that deleted principal. Their
+  removal is pending approval; they do not apply to the replacement identity.
 - The Azure Activity query and fixture are schema-tested and labeled
   simulated-only; no query result from real events, alert, or incident exists.
 - All six detection query files ran read-only against the actual workspace
@@ -67,8 +75,10 @@
   `Standard` for `Discovery` and `FoundationalCspm`; no plan was changed. The
   API tier labels are recorded as returned and are not interpreted as a new
   billing determination here.
-- No Azure resources, Defender plans, connectors, diagnostic settings, rules,
-  alerts, incidents, or Logic Apps were created or changed.
+- No Defender plans, data connectors, diagnostic settings, analytics rules,
+  alerts, incidents, or Logic Apps were created or changed. The approved Azure
+  Policy assignment, two role assignments, and remediation task are the only
+  Azure configuration changes made by this continuation.
 - Sample payloads and event records are synthetic. They use reserved
   documentation IP addresses and have `simulation: true` where normalized.
 - The owner reported a Sentinel trial end date of 2026-11-20; that portal date

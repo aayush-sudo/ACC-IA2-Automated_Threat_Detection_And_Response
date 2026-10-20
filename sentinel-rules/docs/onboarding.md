@@ -44,22 +44,26 @@
 ### Azure Activity Log export status
 
 The `AzureActivity` table exists and its schema was checked in the workspace,
-but it has no rows. The subscription has no Activity Log diagnostic setting.
-The existing built-in policy assignment named **Configure Azure Activity logs
-to stream to specified Log Analytics workspace** is scoped to
-`rg-threat-detection`; its definition targets the subscription resource and
-creates a subscription-level diagnostic setting. The read-only policy state
-query returned no states, and there is no remediation task. The assignment's
-managed identity has Monitoring Contributor and Log Analytics Contributor
-assignments at the resource-group/workspace scopes, but no subscription-scope
-role assignment.
+but it has no rows. The subscription initially had no Activity Log diagnostic
+setting. The existing built-in policy assignment named **Configure Azure
+Activity logs to stream to specified Log Analytics workspace** was found at
+resource-group scope even though its definition targets the subscription
+resource. After owner approval, the resource-group assignment was replaced by
+a subscription-scope assignment. Its new managed identity has Monitoring
+Contributor at subscription scope and Log Analytics Contributor on the
+existing workspace.
 
-Do not create another assignment, change its scope, run remediation, or add
-subscription-level role assignments without approval. A correctly scoped
-subscription assignment and its remediation would route subscription-wide
-Activity Log categories into the existing workspace, with ongoing ingestion
-and potentially billable volume. Ask the subscription owner to approve this
-specific scope and cost impact first. See
+The owner also approved remediation. Task `remediate-azure-activity-log` is
+currently `Evaluating`; the latest read-only check still found no subscription
+diagnostic setting and no `AzureActivity` rows. Verify task completion and the
+setting before treating the source as configured. The policy routes the
+configured subscription-wide Activity Log categories into the workspace and
+can incur ongoing ingestion charges; exact volume/cost remains unknown.
+
+Replacing the assignment deleted its old system-assigned identity. Four
+resource-group/workspace role-assignment records remain for that deleted
+principal. They do not grant access to the new identity, and their removal is
+pending explicit approval. Do not remove them until authorized. See
 [`azure-activity-repeated-failures.kql`](../queries/azure-activity-repeated-failures.kql)
 for a prepared detection, not a live detection.
 
@@ -246,6 +250,7 @@ References checked for this guide:
 - [SecurityAlert table schema](https://learn.microsoft.com/azure/azure-monitor/reference/tables/securityalert)
 - [AzureActivity table schema](https://learn.microsoft.com/azure/azure-monitor/reference/tables/azureactivity)
 - [Create diagnostic settings with built-in Azure Policy](https://learn.microsoft.com/azure/azure-monitor/data-collection/diagnostic-settings-policy-built-in)
+- [Remediate Azure Policy resources](https://learn.microsoft.com/azure/governance/policy/how-to/remediate-resources)
 
 ## Access and evidence
 

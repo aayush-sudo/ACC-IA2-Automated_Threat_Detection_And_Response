@@ -2,8 +2,10 @@
 
 ## Potential resources and charges
 
-No resource is deployed by this module. Potential charges if the owners later
-approve setup include:
+The repository module does not provision resources. An owner-approved Azure
+Policy assignment is now configured at subscription scope; its remediation is
+still evaluating and no diagnostic setting or log ingestion has been verified.
+Potential charges if the setting becomes active include:
 
 | Resource / feature | Potential cost driver |
 | --- | --- |
@@ -67,7 +69,7 @@ did not create.
 | Rate-limit query returns none | Replace the placeholder with the confirmed `RuleId`, verify the rate-limit feature/configuration and action values, and inspect raw rows before changing threshold. |
 | `SigninLogs` not found | The Entra sign-in connector is not configured or is not writing to this workspace. Do not claim failed-sign-in detection until it is. |
 | `SecurityAlert` has no Defender rows | Confirm the current Defender integration and source alert, then inspect actual ProviderName/ProductName. No finding may exist. |
-| `AzureActivity` has no rows | Check the subscription Activity Log diagnostic setting. The current project policy assignment is resource-group-scoped even though its built-in definition targets the subscription resource; no setting, policy state, or remediation task was found. Obtain owner approval before assigning at subscription scope or remediating. |
+| `AzureActivity` has no rows | Check the subscription Activity Log diagnostic setting and `remediate-azure-activity-log` status. The corrected assignment is subscription-scoped, but the latest check still showed remediation evaluating with no setting or rows. Do not claim detection until rows arrive. |
 | Rule creates too many alerts | Inspect duplicate rule matches, shared NAT/scanners, schedule/lookback overlap, incident grouping, suppression, and source volume. Tune only against observed data. |
 | Incident exists but playbook does not run | Check automation rule scope/conditions, workflow enablement, trigger type, managed identity roles, connector connection, and run history. Compare exact trigger payload with mappings. |
 | Cross-tenant write fails | Confirm diagnostic destination restrictions and tenant authorization with both Azure owners; do not exchange service credentials as a workaround. |
