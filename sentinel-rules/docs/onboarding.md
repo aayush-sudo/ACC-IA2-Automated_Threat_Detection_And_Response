@@ -31,8 +31,15 @@
    workspace resource group for Sentinel use. Use a narrower role/scope when
    the current operation supports it; do not grant Owner by default.
 5. Confirm the workspace is visible in Sentinel and that the team can open the
-   Logs experience. In the active subscription context used for this module,
-   workspace discovery returned no workspace.
+   Logs experience. The project workspace and Sentinel onboarding resource
+   were verified read-only on 2026-10-20. The owner reports that the trial
+   expires on 2026-11-20; this date was not independently verified by CLI.
+6. `SigninLogs`, `SecurityAlert`, `AGWFirewallLogs`, and `AzureActivity` table
+   definitions exist. Read-only 30-day queries returned zero rows for each;
+   do not treat table existence as proof of a configured source connector.
+7. The Defender assessment API returned posture recommendations, including
+   unhealthy statuses; the Defender alert API returned zero security alerts.
+   Review these separately from Sentinel incidents.
 
 ## Connect sources
 
@@ -49,18 +56,38 @@ that mode.
 Use a single authorized event against the team's own application to verify
 arrival before enabling repeated-event rules. The `AGWFirewallLogs` table and
 column names in the provided queries are verified from Microsoft Learn, but
-this project's query execution is pending a real workspace.
+the query has not been validated against live WAF events. A read-only
+30-day check returned no
+`AGWFirewallLogs` rows. The resource group inventory showed only the workspace
+and Sentinel resources, not an Application Gateway. Person 1's WAF may be in
+another resource group/subscription; verify ownership and workspace routing
+before using these detections.
 
 ### Entra sign-in logs
 
 Only configure this connector if the team has an authorized Entra tenant and
-needs the signals. In Sentinel **Content hub**, install or update the Microsoft
-Entra ID solution, then open its data connector and follow its current
-instructions to connect sign-in logs. Verify `SigninLogs` exists and check
+needs the signals. First inspect the connector status in the portal using the
+read-only steps below. Do not install/update the Microsoft Entra ID Content
+hub solution or connect the source unless the owner explicitly approves it.
+After approval, follow the connector's current instructions. Verify
+`SigninLogs` exists and check
 `ResultType`, `IPAddress`, and `UserPrincipalName` before enabling
 [`entra-repeated-failed-signins.kql`](../queries/entra-repeated-failed-signins.kql).
 Entra licensing, permissions, and availability vary; do not assume this data
 source is already configured.
+
+For the immediate read-only check, open the Sentinel workspace in the Azure
+portal, select **Configuration > Data connectors**, and inspect the Microsoft
+Entra ID connector's status without selecting **Connect** or installing a
+solution. If it is not already connected, stop and request approval before
+enabling it. A filtered KQL query does not filter connector ingestion: enabling
+the connector may ingest sign-in events for the tenant, not only the test
+account, so check the estimated volume/cost first.
+
+The workspace has a `SigninLogs` table, but a read-only 30-day query found no
+records. No Sentinel data-connector ARM resources were returned by the
+read-only subscription listing. Inspect the current connector status in the
+portal before assuming the source is connected.
 
 ### Defender for Cloud
 
@@ -80,7 +107,35 @@ Bidirectional sync has additional Contributor or Security Admin requirements.
 Confirm current portal experience and permissions; do not enable a paid plan
 solely to satisfy a connector prerequisite without owner approval.
 
-## Build analytics rules (portal-first)
+## Conditional low-volume demo rule: one failed sign-in
+
+The most contained candidate using a table already provisioned is
+[`entra-single-failure-demo.kql`](../queries/entra-single-failure-demo.kql).
+It filters to one dedicated approved test-account UPN and detects a single
+failure in a 15-minute window. However, the current workspace has no
+`SigninLogs` rows; this rule cannot fire until the owner approves connecting
+Entra sign-in logs and data arrives. Do not perform a failed sign-in or enable
+the connector as part of this guide without that approval.
+
+After data-source approval and a successful Logs test, use:
+
+- Rule type: Scheduled query rule.
+- Name: `Demo - Single failed Entra sign-in for test account`.
+- Query: `queries/entra-single-failure-demo.kql`, replacing the UPN with an
+  approved dedicated test account.
+- Query frequency: 5 minutes; lookup period: 15 minutes; alert threshold:
+  greater than 0; alert suppression: 1 hour for the one-off demo.
+- Severity: Low; incident creation: enabled for the isolated test.
+- Entity mappings: `UserPrincipalName` to Account/UPN and `IPAddress` to IP.
+- Trigger a single deliberate failed sign-in only for the dedicated test
+  account after owner approval; do not repeat attempts or use an account that
+  could be locked out. Verify query row first, then alert, then incident as
+  separate outcomes.
+
+This configuration is prepared, not deployed or validated against a real
+sign-in event.
+
+## Build other analytics rules (portal-first)
 
 Create a separate **Scheduled query rule** for each live query. The exact
 wizard labels can change; confirm them in the current portal.

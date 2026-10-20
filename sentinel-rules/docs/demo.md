@@ -9,11 +9,16 @@ source IPs redacted in the report.
    `alert-contract/normalized-alert.schema.json` and one payload from
    `samples/normalized-alerts.json`. Point out `simulation: true`,
    `resource_id: null`, and null Sentinel identifiers.
-3. **Test KQL without Azure data (60 seconds).** Paste
-   `tests/waf-query-test.kql` into an authorized workspace Logs editor if one
-   exists. Expected result: exactly one row for `192.0.2.20`, five blocked
-   events, five distinct transactions. If no workspace exists, show the query
-   file and run local artifact tests instead. This KQL query creates no alert.
+3. **Test KQL without live source data (60 seconds).** Paste
+   `tests/waf-query-test.kql` into the provisioned workspace Logs editor.
+   Expected result: exactly one row for `192.0.2.20`, five blocked events,
+   five distinct transactions. This is inline synthetic data and creates no
+   Sentinel alert. The current workspace had no WAF source rows in the
+   30-day check.
+   If demonstrating the prepared Entra rule instead, first ensure its
+   connector and dedicated test account were explicitly approved and that
+   `SigninLogs` has data; use `tests/entra-single-failure-demo-test.kql` only
+   to show synthetic KQL behavior.
 4. **Explain live WAF detection (60 seconds).** Show
    `queries/waf-repeated-blocks.kql`, its `AGWFirewallLogs` dependency, time
    window, threshold, and false-positive caveats.
@@ -27,6 +32,11 @@ source IPs redacted in the report.
 7. **Close (30 seconds).** State what is verified, simulated, pending, costs,
    and cleanup steps using `docs/checklist.md` and
    `docs/runbook-and-cost.md`.
+
+For a real current Defender posture example, the subscription has unhealthy
+assessment recommendations available to review in **Defender for Cloud >
+Recommendations**. Label this as a posture finding; the checked Defender
+security-alert list and Sentinel `SecurityAlert` table had zero alerts.
 
 If approved live resources and a real WAF test exist, replace step 3 with a
 safe request to the team's own test endpoint and show its real alert/incident.

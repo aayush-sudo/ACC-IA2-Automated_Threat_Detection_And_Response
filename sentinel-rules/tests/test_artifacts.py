@@ -49,12 +49,17 @@ class SentinelArtifactTests(unittest.TestCase):
                 "waf-repeated-blocks.kql",
                 "waf-rate-limit.kql",
                 "entra-repeated-failed-signins.kql",
+                "entra-single-failure-demo.kql",
                 "defender-cloud-alerts.kql",
             },
         )
         self.assertIn("AGWFirewallLogs", queries["waf-repeated-blocks.kql"])
         self.assertIn("RateLimitRuleId", queries["waf-rate-limit.kql"])
         self.assertIn("SigninLogs", queries["entra-repeated-failed-signins.kql"])
+        self.assertIn(
+            "REPLACE_WITH_APPROVED_TEST_ACCOUNT_UPN",
+            queries["entra-single-failure-demo.kql"],
+        )
         self.assertIn("SecurityAlert", queries["defender-cloud-alerts.kql"])
         self.assertTrue(
             all("not" in text.lower() and "live" in text.lower() for text in queries.values())
@@ -65,6 +70,10 @@ class SentinelArtifactTests(unittest.TestCase):
             "waf-query-test.kql": ("blockedTransactions >= 5", "192.0.2.20"),
             "waf-rate-limit-test.kql": ("blockedTransactions >= 10", "192.0.2.40"),
             "entra-failed-signins-test.kql": ("failures >= 10", "192.0.2.50"),
+            "entra-single-failure-demo-test.kql": (
+                "failureCount >= 1",
+                "demo.user@example.invalid",
+            ),
             "defender-alerts-test.kql": (
                 "SampleSecurityAlerts",
                 "simulated-alert-001",

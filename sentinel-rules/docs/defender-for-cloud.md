@@ -23,6 +23,30 @@ all in-scope resources or will not convert to paid usage.
 
 ## Findings, permissions, and Sentinel
 
+### Read-only subscription snapshot (2026-10-20)
+
+The `az security pricing list` response reported `Free` pricing tiers for the
+listed workload plans (including VirtualMachines, SqlServers, AppServices,
+StorageAccounts, and Containers), and `Standard` for `Discovery` and
+`FoundationalCspm`; `CloudPosture` reported `Free`. These are recorded as the
+API returned them, not interpreted here as an independent billing quote.
+No plan was changed during the check. Confirm their current meaning and
+subscription charges in Defender for Cloud before any change.
+
+`SecurityAlert` exists as an Analytics table in the workspace, but a
+read-only query returned zero rows for the last 30 days. This verifies no
+Defender alerts were ingested into this workspace during that period; it does
+not prove that the subscription has no recommendations or alerts in the
+Defender portal.
+
+The subscription-wide read-only Defender assessment list returned 16 posture
+assessments, 7 with `Unhealthy` status. One example was
+`Subscriptions should have a contact email address for security issues`.
+The Defender security alert list returned zero alerts. A report/demo may show
+this existing recommendation as a genuine posture finding, but it is not an
+incident or threat alert and does not prove Sentinel alert generation. Do not
+enable a plan or remediate a recommendation merely to produce a screenshot.
+
 1. In Defender for Cloud, check the subscription's current CSPM and workload
    plan status and the inventory of actual in-scope project resources.
 2. Review the Recommendations and Security alerts pages. A recommendation is

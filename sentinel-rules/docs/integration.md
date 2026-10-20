@@ -78,8 +78,9 @@ based on the simulated samples. Map source-specific fields from the Sentinel
 alert evidence, not from the incident title.
 
 The examples in `samples/normalized-alerts.json` are normalized examples,
-not Sentinel trigger payloads. No native trigger payload has been collected
-because no workspace/playbook is available in the active context.
+not Sentinel trigger payloads. No native trigger payload has been collected:
+no project Logic App playbook or real incident run history was available for
+this check.
 
 ### Suggested field mapping
 

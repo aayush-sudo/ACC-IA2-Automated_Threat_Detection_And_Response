@@ -10,11 +10,14 @@ enable paid plans, or call external systems.
 | Capability | Status |
 | --- | --- |
 | Repository baseline | Verified: no previous README or implementation files were present. |
-| Azure workspace discovery | Verified: the default Azure context returned zero Log Analytics workspaces. This does not prove that another tenant or subscription has none. |
-| WAF table schema | Verified against Microsoft Learn for `AGWFirewallLogs`; no live workspace query was possible. |
-| Entra sign-in table schema | Verified against Microsoft Learn for `SigninLogs`; this detection is conditional on connecting Entra ID sign-in logs. |
-| Defender alert table schema | Verified against Microsoft Learn for `SecurityAlert`; Defender findings are not present in this workspace context. |
-| Query execution / analytics alert / incident | Pending: requires an authorized, configured workspace and real ingested events. |
+| Azure subscription and workspace | Verified read-only on 2026-10-20: active subscription is Azure for Students; `law-threat-detection-aayush` exists in Korea Central, provisioning succeeded, Analytics workspace plan, 30-day retention. |
+| Microsoft Sentinel | Verified: the workspace has a `Microsoft.SecurityInsights/onboardingStates/default` resource and a Sentinel resource. The portal-reported trial end date (2026-11-20) was supplied by the owner, not independently verified by CLI. |
+| Candidate table schemas | Verified as provisioned: `SigninLogs`, `SecurityAlert`, `AGWFirewallLogs`, and `AzureActivity` are present as Analytics tables. Table existence does not prove a connector is active. |
+| Ingested records | Checked with read-only KQL over the last 30 days: zero rows in `SigninLogs` and `SecurityAlert`; no rows returned for `AGWFirewallLogs` or `AzureActivity`. |
+| Defender for Cloud findings | Read-only subscription assessment list returned 16 posture assessments, 7 with `Unhealthy` status. Defender security-alert list returned 0 alerts. An unhealthy recommendation is a real posture finding, not a Sentinel alert or incident. |
+| Existing analytics rules | No `Microsoft.SecurityInsights/alertRules` resources found in the project resource group. |
+| Data connectors | No `Microsoft.SecurityInsights/dataConnectors` resources were returned by the subscription-wide read-only ARM listing. Confirm the connector status in the portal; this listing is not proof that no source integration exists by another mechanism. |
+| Detection query / analytics alert / incident | Pending: no source events were available; no detection query result, alert, or incident was produced. |
 | Sample events and alert examples | Simulated only. No sample is presented as a real Azure event or resource. |
 | WAF and Logic Apps integration | Pending teammate-owned resources, their tenant/workspace choices, and authorized access. |
 
@@ -23,8 +26,8 @@ enable paid plans, or call external systems.
 - [`alert-contract/normalized-alert.schema.json`](./alert-contract/normalized-alert.schema.json) — response playbook contract.
 - [`samples/normalized-alerts.json`](./samples/normalized-alerts.json) — four simulated severity examples; all resource IDs are `null`.
 - [`samples/waf-firewall-events.json`](./samples/waf-firewall-events.json) — synthetic WAF rows using documented `AGWFirewallLogs` fields.
-- [`queries/`](./queries/) — WAF blocked-request, WAF rate-limit, conditional Entra sign-in, and Defender alert queries.
-- [`tests/`](./tests/) — inline, safe KQL fixtures for the WAF, sign-in, and Defender query patterns without live source events.
+- [`queries/`](./queries/) — WAF blocked-request, WAF rate-limit, conditional Entra sign-in, single-account demo, and Defender alert queries.
+- [`tests/`](./tests/) — inline, safe KQL fixtures for the detection patterns without live source events.
 - [`tests/test_artifacts.py`](./tests/test_artifacts.py) — local standard-library checks for contract, fixture, and query-file consistency.
 - [`docs/onboarding.md`](./docs/onboarding.md) — workspace, connectors, analytics rules, and incident verification.
 - [`docs/defender-for-cloud.md`](./docs/defender-for-cloud.md) — scoped Defender setup and cost notes.
@@ -46,17 +49,23 @@ enable paid plans, or call external systems.
    python3 -m unittest discover -s tests -v
    ```
 
-5. To test query logic independently, paste `tests/waf-query-test.kql` into a
-   workspace Logs editor. It uses only an inline `datatable`; it will not create
-   an alert or incident.
+5. To test query logic independently, paste an inline fixture from `tests/`
+   into the workspace Logs editor. It uses only an inline `datatable`; it will
+   not create an alert or incident.
 6. For live alert/incident verification, follow [`docs/onboarding.md`](./docs/onboarding.md)
    and only use a WAF that the team owns and is authorized to test.
 
 ## Query validation boundary
 
-The documented table and column names are based on Microsoft Learn references
-listed in the guides. KQL files are not certified against a live workspace:
-there is no accessible workspace in the current Azure context. Confirm the
-workspace table schema and run each query in Logs before creating an analytics
-rule. The WAF rate-limit query additionally requires Person 1 to confirm the
-actual custom rule ID/name that represents rate limiting.
+The documented table names and columns are based on Microsoft Learn and
+workspace schema inventory. Queries were used read-only to check table data,
+but no detection query was tested against nonempty source data. The Entra
+single-failure demo query requires an approved Entra connector and a dedicated
+test account. The WAF rate-limit query additionally requires Person 1 to
+confirm the actual custom rule ID/name that represents rate limiting.
+
+For a genuine finding that can be demonstrated now without changing the
+subscription, open **Defender for Cloud > Recommendations** and review an
+existing unhealthy posture assessment. Do not describe it as a Sentinel alert;
+the subscription alert list and workspace `SecurityAlert` query both returned
+zero alerts.

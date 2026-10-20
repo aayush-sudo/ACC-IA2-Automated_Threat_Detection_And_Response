@@ -1,0 +1,28 @@
+// Conditional demo query: SigninLogs exists in the workspace but had no rows
+// in the last 30 days when checked on 2026-10-20. It will return nothing until
+// Entra sign-in logs are connected and the approved test account has an event.
+// Scope to a dedicated test account; do not use a general user's account.
+// Window: 15 minutes. Threshold: one failed sign-in for that account.
+// Run only after connector/ingestion approval and after confirming the UPN.
+// Query execution is not validated against live sign-in data.
+let DemoAccountUpn = "REPLACE_WITH_APPROVED_TEST_ACCOUNT_UPN";
+SigninLogs
+| where TimeGenerated > ago(15m)
+| where UserPrincipalName =~ DemoAccountUpn
+| where ResultType != "0"
+| summarize
+    failureCount = count(),
+    IPAddress = take_any(IPAddress),
+    AppDisplayName = take_any(AppDisplayName),
+    firstSeen = min(TimeGenerated),
+    lastSeen = max(TimeGenerated)
+    by UserPrincipalName
+| where failureCount >= 1
+| project
+    TimeGenerated = lastSeen,
+    UserPrincipalName,
+    IPAddress,
+    AppDisplayName,
+    failureCount,
+    firstSeen,
+    lastSeen
