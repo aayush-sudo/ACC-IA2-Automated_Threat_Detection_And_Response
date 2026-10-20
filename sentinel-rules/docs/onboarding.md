@@ -60,10 +60,11 @@ setting before treating the source as configured. The policy routes the
 configured subscription-wide Activity Log categories into the workspace and
 can incur ongoing ingestion charges; exact volume/cost remains unknown.
 
-Replacing the assignment deleted its old system-assigned identity. Four
-resource-group/workspace role-assignment records remain for that deleted
-principal. They do not grant access to the new identity, and their removal is
-pending explicit approval. Do not remove them until authorized. See
+Replacing the assignment deleted its old system-assigned identity. Its four
+resource-group/workspace role-assignment records were removed after separate
+owner approval. Read-only role checks confirmed that the old principal has no
+remaining assignments and the replacement identity retains only the two
+required role assignments. See
 [`azure-activity-repeated-failures.kql`](../queries/azure-activity-repeated-failures.kql)
 for a prepared detection, not a live detection.
 

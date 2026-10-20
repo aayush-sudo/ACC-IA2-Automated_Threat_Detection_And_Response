@@ -75,8 +75,9 @@ is simulated output, not a live detection. The owner approved replacing the
 resource-group policy assignment with a subscription-scoped assignment and
 granting its new identity the two roles required by the built-in definition.
 The remediation task is still evaluating; its diagnostic setting and log
-ingestion are not yet verified. Four old role-assignment records remain for
-the deleted identity; their removal is pending explicit approval.
+ingestion are not yet verified. The four orphaned role-assignment records for
+the deleted identity were removed after approval; the new identity's two
+required role assignments remain verified.
 
 For a genuine finding that can be demonstrated now without changing the
 subscription, open **Defender for Cloud > Recommendations** and review an

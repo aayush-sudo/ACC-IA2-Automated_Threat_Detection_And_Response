@@ -22,7 +22,7 @@
 - [x] Document Person 1 / Person 3 handoffs and trigger-schema boundaries.
 - [x] Add troubleshooting, screenshot evidence checklist, and demo script.
 - [ ] Execute a detection query against nonempty real source data and validate results.
-- [ ] Verify remediation completes, the subscription diagnostic setting exists, and AzureActivity rows arrive; ask approval before removing the four orphaned role assignments.
+- [ ] Verify remediation completes, the subscription diagnostic setting exists, and AzureActivity rows arrive.
 - [ ] Generate and verify a real Sentinel alert and incident.
 - [ ] Validate actual WAF logs and rate-limit identifier with Person 1.
 - [ ] Validate native incident trigger mapping and dry-run with Person 3.
@@ -49,9 +49,10 @@
   `Evaluating` state. The latest check found no subscription diagnostic
   setting and no `AzureActivity` rows, so export and ingestion are not yet
   verified. No Sentinel rule or alert was created.
-- Deleting the original assignment removed its system-assigned identity, but
-  four old role-assignment records remain for that deleted principal. Their
-  removal is pending approval; they do not apply to the replacement identity.
+- Deleting the original assignment removed its system-assigned identity. The
+  four role assignments for that deleted principal were removed after
+  approval. Read-only checks confirmed no old grants remain and the new
+  identity retains only its two required assignments.
 - The Azure Activity query and fixture are schema-tested and labeled
   simulated-only; no query result from real events, alert, or incident exists.
 - All six detection query files ran read-only against the actual workspace
