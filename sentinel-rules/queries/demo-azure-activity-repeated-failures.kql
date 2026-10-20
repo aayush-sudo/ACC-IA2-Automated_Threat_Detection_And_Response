@@ -1,0 +1,50 @@
+// SIMULATION ONLY: self-contained demo; does not read live AzureActivity or create
+// a Sentinel alert/incident. All rows below are synthetic.
+// Scenario: one caller/IP has 5 failed administrative operations in 15m.
+// Expected result: one row for demo-principal / 192.0.2.99 with 5 failures.
+let SampleActivity = datatable(
+    Offset:timespan,
+    Caller:string,
+    CallerIpAddress:string,
+    CategoryValue:string,
+    ActivityStatusValue:string,
+    OperationNameValue:string,
+    ResourceGroup:string,
+    CorrelationId:string
+)
+[
+    1m, "demo-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "demo-rg", "demo-correlation-01",
+    2m, "demo-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "demo-rg", "demo-correlation-02",
+    3m, "demo-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/delete", "demo-rg", "demo-correlation-03",
+    4m, "demo-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Network/networkSecurityGroups/write", "demo-rg", "demo-correlation-04",
+    5m, "demo-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Network/networkSecurityGroups/write", "demo-rg", "demo-correlation-05",
+    6m, "demo-principal", "192.0.2.99", "Administrative", "Succeeded", "Microsoft.Compute/virtualMachines/read", "demo-rg", "demo-correlation-06",
+    1m, "other-principal", "192.0.2.100", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "demo-rg", "demo-correlation-07",
+    2m, "other-principal", "192.0.2.100", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "demo-rg", "demo-correlation-08",
+    3m, "other-principal", "192.0.2.100", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "demo-rg", "demo-correlation-09",
+    4m, "other-principal", "192.0.2.100", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "demo-rg", "demo-correlation-10",
+    16m, "demo-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "demo-rg", "demo-correlation-11"
+]
+| extend TimeGenerated = now() - Offset;
+SampleActivity
+| where TimeGenerated > ago(15m)
+| where CategoryValue =~ "Administrative"
+| where ActivityStatusValue =~ "Failed"
+| where isnotempty(Caller)
+| summarize
+    TimeGenerated = max(TimeGenerated),
+    FailedOperationCount = count(),
+    OperationNames = make_set(OperationNameValue, 10),
+    ResourceGroups = make_set(ResourceGroup, 10),
+    CorrelationIds = make_set(CorrelationId, 10)
+    by Caller, CallerIpAddress
+| where FailedOperationCount >= 5
+| project
+    TimeGenerated,
+    Caller,
+    CallerIpAddress,
+    FailedOperationCount,
+    OperationNames,
+    ResourceGroups,
+    CorrelationIds,
+    Simulation = true

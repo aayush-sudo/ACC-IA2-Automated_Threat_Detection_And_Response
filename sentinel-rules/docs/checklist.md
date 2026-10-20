@@ -16,6 +16,9 @@
 - [x] Prepare a dedicated-account, single-failure Entra demo query and analytics-rule settings without enabling a connector or rule.
 - [x] Inspect the Azure Activity policy assignment, compliance state, remediation tasks, identity role scopes, actual table schema, and subscription diagnostic settings read-only.
 - [x] Add a schema-based Azure Activity repeated-failure query and synthetic inline fixture; do not present it as live detection.
+- [x] Add three independent `datatable` demo queries, a simulated alert/response pair, and a portal walkthrough.
+- [x] Execute all three presentation demo queries in the workspace Logs query API and confirm their expected simulated outputs.
+- [x] Add local assertions for demo isolation, result thresholds, and simulation-only alert/response payloads.
 - [x] After owner approval, replace the ineffective RG-scoped assignment with a subscription-scoped assignment, grant its two required roles, and start remediation.
 - [x] Document workspace setup, connectors, analytics rules, incidents, permissions, cost, and cleanup.
 - [x] Document Defender scope, findings, integration, and no-finding fallback.
@@ -65,6 +68,12 @@
   exactly 10 minutes; the fixture was corrected to use events within the
   window and then returned its expected result. These tests did not ingest
   sample data or create alerts/incidents.
+- Three additional standalone demo queries, each using only its own
+  `datatable`, were executed in the workspace Logs query API: Azure Activity
+  returned one caller/IP group with 5 failures, WAF returned one IP with 6
+  blocked events across 5 distinct transactions, and Entra returned one IP
+  with 10 failed sign-ins across 2 accounts. Each result included
+  `Simulation=true`; none read production tables or created alerts/incidents.
 - Defender for Cloud returned 16 posture assessments, 7 with `Unhealthy`
   status; the Defender security-alert list returned zero alerts.
   Recommendations are not Sentinel alerts/incidents.
@@ -84,6 +93,6 @@
   documentation IP addresses and have `simulation: true` where normalized.
 - The owner reported a Sentinel trial end date of 2026-11-20; that portal date
   was not independently read from the Sentinel API.
-- Four local standard-library artifact test methods cover the single-failure
-  fixture and other deliverables; KQL fixture execution is additional and
-  synthetic. Neither creates an Azure alert/incident.
+- Six local standard-library artifact test methods cover the single-failure
+  fixture, demo independence, and other deliverables; KQL fixture execution
+  is additional and synthetic. Neither creates an Azure alert/incident.

@@ -1,0 +1,47 @@
+// SIMULATION ONLY: self-contained demo; does not read live AGWFirewallLogs or
+// create a Sentinel alert/incident. All rows below are synthetic.
+// Scenario: at least 5 distinct blocked transactions from one client in 15m.
+// Expected result: one row for 192.0.2.20 with 5 distinct blocked transactions.
+let SampleWaf = datatable(
+    Offset:timespan,
+    ClientIp:string,
+    Action:string,
+    TransactionId:string,
+    RuleId:string,
+    RequestUri:string
+)
+[
+    1m, "192.0.2.20", "Blocked", "demo-waf-tx-001", "demo-rule-942100", "/search?q=sample",
+    2m, "192.0.2.20", "Blocked", "demo-waf-tx-002", "demo-rule-942100", "/search?q=sample",
+    3m, "192.0.2.20", "Blocked", "demo-waf-tx-003", "demo-rule-942100", "/search?q=sample",
+    4m, "192.0.2.20", "Blocked", "demo-waf-tx-004", "demo-rule-942100", "/search?q=sample",
+    5m, "192.0.2.20", "Blocked", "demo-waf-tx-005", "demo-rule-942100", "/search?q=sample",
+    6m, "192.0.2.20", "Blocked", "demo-waf-tx-005", "demo-rule-942100", "/search?q=sample",
+    1m, "192.0.2.21", "Blocked", "demo-waf-other-tx-001", "demo-rule-942100", "/catalog",
+    2m, "192.0.2.21", "Blocked", "demo-waf-other-tx-002", "demo-rule-942100", "/catalog",
+    3m, "192.0.2.21", "Blocked", "demo-waf-other-tx-003", "demo-rule-942100", "/catalog",
+    4m, "192.0.2.21", "Blocked", "demo-waf-other-tx-004", "demo-rule-942100", "/catalog",
+    5m, "192.0.2.20", "Allowed", "demo-waf-tx-006", "demo-rule-942100", "/health",
+    16m, "192.0.2.20", "Blocked", "demo-waf-old-tx-001", "demo-rule-942100", "/search?q=sample"
+]
+| extend TimeGenerated = now() - Offset;
+SampleWaf
+| where TimeGenerated > ago(15m)
+| where Action =~ "Blocked"
+| where isnotempty(ClientIp) and isnotempty(TransactionId)
+| summarize
+    TimeGenerated = max(TimeGenerated),
+    blockedEvents = count(),
+    blockedTransactions = dcount(TransactionId),
+    ruleIds = make_set(RuleId, 10),
+    sampleUris = make_set(RequestUri, 5)
+    by ClientIp
+| where blockedTransactions >= 5
+| project
+    TimeGenerated,
+    ClientIp,
+    blockedEvents,
+    blockedTransactions,
+    ruleIds,
+    sampleUris,
+    Simulation = true

@@ -19,6 +19,7 @@ enable paid plans, or call external systems.
 | Existing analytics rules | No `Microsoft.SecurityInsights/alertRules` resources found in the project resource group. |
 | Data connectors | No `Microsoft.SecurityInsights/dataConnectors` resources were returned by the subscription-wide read-only ARM listing. Confirm the connector status in the portal; this listing is not proof that no source integration exists by another mechanism. |
 | Detection query / analytics alert / incident | Query syntax validated against actual workspace tables; no live source rows available. The Azure Activity query matched zero live groups; no live query result, alert, or incident was produced. |
+| Source-independent demo queries | Three standalone `datatable` demos were executed in the workspace Logs query API. Each returned the documented simulated result; this was query output only, not a Sentinel alert, incident, or Logic App execution. |
 | Sample events and alert examples | Simulated only. No sample is presented as a real Azure event or resource. |
 | WAF and Logic Apps integration | Pending teammate-owned resources, their tenant/workspace choices, and authorized access. |
 
@@ -27,7 +28,8 @@ enable paid plans, or call external systems.
 - [`alert-contract/normalized-alert.schema.json`](./alert-contract/normalized-alert.schema.json) — response playbook contract.
 - [`samples/normalized-alerts.json`](./samples/normalized-alerts.json) — four simulated severity examples; all resource IDs are `null`.
 - [`samples/waf-firewall-events.json`](./samples/waf-firewall-events.json) — synthetic WAF rows using documented `AGWFirewallLogs` fields.
-- [`queries/`](./queries/) — WAF blocked-request, WAF rate-limit, Azure Activity repeated failures, conditional Entra sign-in, single-account demo, and Defender alert queries.
+- [`samples/demo-normalized-alert.json`](./samples/demo-normalized-alert.json) and [`samples/demo-simulated-response.json`](./samples/demo-simulated-response.json) — normalized simulated alert and non-executing response illustration.
+- [`queries/`](./queries/) — live-source detections plus three standalone `datatable` demo queries.
 - [`tests/`](./tests/) — inline, safe KQL fixtures for the detection patterns without live source events.
 - [`tests/test_artifacts.py`](./tests/test_artifacts.py) — local standard-library checks for contract, fixture, and query-file consistency.
 - [`docs/onboarding.md`](./docs/onboarding.md) — workspace, connectors, analytics rules, and incident verification.
@@ -35,6 +37,7 @@ enable paid plans, or call external systems.
 - [`docs/integration.md`](./docs/integration.md) — WAF and Logic Apps integration agreements.
 - [`docs/runbook-and-cost.md`](./docs/runbook-and-cost.md) — costs, safety, troubleshooting, cleanup, and evidence.
 - [`docs/demo.md`](./docs/demo.md) — short demonstration script.
+- [`docs/simulation-demo.md`](./docs/simulation-demo.md) — exact portal steps and expected output for the source-independent demo.
 - [`docs/checklist.md`](./docs/checklist.md) — deliverable checklist and validation evidence.
 
 ## Quick start
@@ -53,6 +56,8 @@ enable paid plans, or call external systems.
 5. To test query logic independently, paste an inline fixture from `tests/`
    into the workspace Logs editor. It uses only an inline `datatable`; it will
    not create an alert or incident.
+   For the presentation-ready source-independent walkthrough, follow
+   [`docs/simulation-demo.md`](./docs/simulation-demo.md).
 6. For live alert/incident verification, follow [`docs/onboarding.md`](./docs/onboarding.md)
    and only use a WAF that the team owns and is authorized to test.
 
@@ -75,7 +80,9 @@ is simulated output, not a live detection. The owner approved replacing the
 resource-group policy assignment with a subscription-scoped assignment and
 granting its new identity the two roles required by the built-in definition.
 The remediation task is still evaluating; its diagnostic setting and log
-ingestion are not yet verified. The four orphaned role-assignment records for
+ingestion are not yet verified. The three standalone presentation queries
+were separately executed against in-memory synthetic tables and returned their
+expected counts. The four orphaned role-assignment records for
 the deleted identity were removed after approval; the new identity's two
 required role assignments remain verified.
 

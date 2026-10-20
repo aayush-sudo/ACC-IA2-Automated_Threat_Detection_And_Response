@@ -9,16 +9,12 @@ source IPs redacted in the report.
    `alert-contract/normalized-alert.schema.json` and one payload from
    `samples/normalized-alerts.json`. Point out `simulation: true`,
    `resource_id: null`, and null Sentinel identifiers.
-3. **Test KQL without live source data (60 seconds).** Paste
-   `tests/waf-query-test.kql` into the provisioned workspace Logs editor.
-   Expected result: exactly one row for `192.0.2.20`, five blocked events,
-   five distinct transactions. This inline synthetic KQL has been executed
-   successfully and creates no Sentinel alert. The current workspace had no
-   WAF source rows in the 30-day check.
-   If demonstrating the prepared Entra rule instead, first ensure its
-   connector and dedicated test account were explicitly approved and that
-   `SigninLogs` has data; use `tests/entra-single-failure-demo-test.kql` only
-   to show synthetic KQL behavior.
+3. **Run the source-independent simulation (2 minutes).** Follow
+   [`simulation-demo.md`](./simulation-demo.md) in the workspace Logs editor.
+   Run the Azure Activity, WAF, and Entra demo queries one at a time. Each is a
+   complete `datatable` query; expected counts and the spoken explanation are
+   documented there. These are query results only and do not create a Sentinel
+   alert, incident, or Logic App run.
 4. **Explain live WAF detection (60 seconds).** Show
    `queries/waf-repeated-blocks.kql`, its `AGWFirewallLogs` dependency, time
    window, threshold, and false-positive caveats.

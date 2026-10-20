@@ -1,0 +1,14 @@
+{
+  "simulation": true,
+  "status": "simulated_only",
+  "logic_app_invoked": false,
+  "sentinel_alert_created": false,
+  "sentinel_incident_created": false,
+  "input_alert_id": "simulated-azure-activity-repeated-failures-001",
+  "response": {
+    "action": "analyst_review_recommended",
+    "resource_changed": false,
+    "account_disabled": false,
+    "notification": "SIMULATED: repeated failed administrative operations detected; review caller and operation evidence."
+  }
+}

@@ -1,0 +1,55 @@
+// SIMULATION ONLY: self-contained demo; does not read live SigninLogs or create
+// a Sentinel alert/incident. All rows below are synthetic.
+// Scenario: at least 10 failed sign-ins from one IP in 15m.
+// Expected result: one row for 192.0.2.50 with 10 failures across 2 accounts.
+let SampleSignins = datatable(
+    Offset:timespan,
+    ResultType:string,
+    IPAddress:string,
+    UserPrincipalName:string,
+    AppDisplayName:string
+)
+[
+    1m, "50126", "192.0.2.50", "demo.one@example.invalid", "Sample App",
+    2m, "50126", "192.0.2.50", "demo.one@example.invalid", "Sample App",
+    3m, "50126", "192.0.2.50", "demo.one@example.invalid", "Sample App",
+    4m, "50126", "192.0.2.50", "demo.one@example.invalid", "Sample App",
+    5m, "50126", "192.0.2.50", "demo.one@example.invalid", "Sample App",
+    6m, "50126", "192.0.2.50", "demo.two@example.invalid", "Sample App",
+    7m, "50126", "192.0.2.50", "demo.two@example.invalid", "Sample App",
+    8m, "50126", "192.0.2.50", "demo.two@example.invalid", "Sample App",
+    9m, "50126", "192.0.2.50", "demo.two@example.invalid", "Sample App",
+    10m, "50126", "192.0.2.50", "demo.two@example.invalid", "Sample App",
+    1m, "0", "192.0.2.50", "demo.one@example.invalid", "Sample App",
+    1m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    2m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    3m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    4m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    5m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    6m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    7m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    8m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    9m, "50126", "192.0.2.51", "other@example.invalid", "Sample App",
+    16m, "50126", "192.0.2.50", "demo.one@example.invalid", "Sample App"
+]
+| extend TimeGenerated = now() - Offset;
+SampleSignins
+| where TimeGenerated > ago(15m)
+| where ResultType != "0"
+| where isnotempty(IPAddress)
+| summarize
+    TimeGenerated = max(TimeGenerated),
+    failures = count(),
+    affectedAccounts = dcount(UserPrincipalName),
+    sampleAccounts = make_set(UserPrincipalName, 10),
+    applications = make_set(AppDisplayName, 10)
+    by IPAddress
+| where failures >= 10
+| project
+    TimeGenerated,
+    IPAddress,
+    failures,
+    affectedAccounts,
+    sampleAccounts,
+    applications,
+    Simulation = true

@@ -52,6 +52,9 @@ class SentinelArtifactTests(unittest.TestCase):
                 "entra-single-failure-demo.kql",
                 "defender-cloud-alerts.kql",
                 "azure-activity-repeated-failures.kql",
+                "demo-azure-activity-repeated-failures.kql",
+                "demo-waf-repeated-blocks.kql",
+                "demo-entra-repeated-failed-signins.kql",
             },
         )
         self.assertIn("AGWFirewallLogs", queries["waf-repeated-blocks.kql"])
@@ -72,6 +75,62 @@ class SentinelArtifactTests(unittest.TestCase):
         self.assertTrue(
             all("not" in text.lower() and "live" in text.lower() for text in queries.values())
         )
+
+    def test_standalone_demo_queries_have_no_live_table_dependencies(self):
+        demo_queries = {
+            "demo-azure-activity-repeated-failures.kql": (
+                "FailedOperationCount >= 5",
+                "FailedOperationCount",
+            ),
+            "demo-waf-repeated-blocks.kql": (
+                "blockedTransactions >= 5",
+                "blockedTransactions",
+            ),
+            "demo-entra-repeated-failed-signins.kql": (
+                "failures >= 10",
+                "affectedAccounts",
+            ),
+        }
+        live_tables = ("AzureActivity", "AGWFirewallLogs", "SigninLogs")
+        for name, expected in demo_queries.items():
+            with self.subTest(query=name):
+                query = (ROOT / "queries" / name).read_text()
+                executable_query = "\n".join(
+                    line
+                    for line in query.splitlines()
+                    if not line.lstrip().startswith("//")
+                )
+                self.assertIn("datatable(", executable_query)
+                self.assertIn("Simulation = true", executable_query)
+                self.assertNotIn("join ", executable_query.lower())
+                for table in live_tables:
+                    self.assertNotIn(table, executable_query)
+                for value in expected:
+                    self.assertIn(value, query)
+
+    def test_demo_alert_and_response_are_explicitly_simulated(self):
+        schema = json.loads(
+            (ROOT / "alert-contract" / "normalized-alert.schema.json").read_text()
+        )
+        alert = json.loads((ROOT / "samples" / "demo-normalized-alert.json").read_text())
+        response = json.loads(
+            (ROOT / "samples" / "demo-simulated-response.json").read_text()
+        )
+
+        self.assertTrue(set(schema["required"]).issubset(alert))
+        self.assertEqual(alert["severity"], "medium")
+        self.assertIsNone(alert["resource_id"])
+        self.assertTrue(alert["evidence"]["simulation"])
+        self.assertEqual(
+            set(alert["sentinel"].values()),
+            {None},
+        )
+        self.assertTrue(response["simulation"])
+        self.assertFalse(response["logic_app_invoked"])
+        self.assertFalse(response["sentinel_alert_created"])
+        self.assertFalse(response["sentinel_incident_created"])
+        self.assertFalse(response["response"]["resource_changed"])
+        self.assertFalse(response["response"]["account_disabled"])
 
     def test_each_query_has_an_inline_safe_kql_fixture(self):
         fixtures = {
