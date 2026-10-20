@@ -1,3 +1,0 @@
-ReadMe File
-
-SourceControl setup test from VS Code
