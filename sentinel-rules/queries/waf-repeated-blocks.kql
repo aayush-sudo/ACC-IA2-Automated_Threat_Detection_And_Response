@@ -1,0 +1,28 @@
+// Scenario: repeated WAF-blocked requests from one client may indicate probing.
+// Requires the Application Gateway WAF diagnostic category routed in
+// resource-specific mode to a workspace containing AGWFirewallLogs.
+// Window: 15 minutes. Threshold: at least 5 distinct blocked transactions.
+// Schema is verified from Microsoft Learn; execution is not validated against
+// a live workspace. Review known scanners and NAT/shared egress before action.
+AGWFirewallLogs
+| where TimeGenerated > ago(15m)
+| where Action =~ "Blocked"
+| where isnotempty(ClientIp) and isnotempty(TransactionId)
+| summarize
+    blockedEvents = count(),
+    blockedTransactions = dcount(TransactionId),
+    ruleIds = make_set(RuleId, 20),
+    sampleUris = make_set(RequestUri, 5),
+    firstSeen = min(TimeGenerated),
+    lastSeen = max(TimeGenerated)
+    by ClientIp
+| where blockedTransactions >= 5
+| project
+    TimeGenerated = lastSeen,
+    ClientIp,
+    blockedEvents,
+    blockedTransactions,
+    ruleIds,
+    sampleUris,
+    firstSeen,
+    lastSeen

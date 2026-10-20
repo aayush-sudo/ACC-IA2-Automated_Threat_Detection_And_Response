@@ -1,0 +1,35 @@
+// Synthetic inline test for the rate-limit query shape.
+// Expected result: one row for 192.0.2.40 with 10 blocked transactions.
+let RateLimitRuleId = "sample-rate-limit-rule";
+let SampleEvents = datatable(
+    offset:timespan,
+    ClientIp:string,
+    Action:string,
+    TransactionId:string,
+    RuleId:string,
+    RequestUri:string
+)
+[
+    1m, "192.0.2.40", "Blocked", "rate-tx-001", "sample-rate-limit-rule", "/test",
+    2m, "192.0.2.40", "Blocked", "rate-tx-002", "sample-rate-limit-rule", "/test",
+    3m, "192.0.2.40", "Blocked", "rate-tx-003", "sample-rate-limit-rule", "/test",
+    4m, "192.0.2.40", "Blocked", "rate-tx-004", "sample-rate-limit-rule", "/test",
+    5m, "192.0.2.40", "Blocked", "rate-tx-005", "sample-rate-limit-rule", "/test",
+    6m, "192.0.2.40", "Blocked", "rate-tx-006", "sample-rate-limit-rule", "/test",
+    7m, "192.0.2.40", "Blocked", "rate-tx-007", "sample-rate-limit-rule", "/test",
+    8m, "192.0.2.40", "Blocked", "rate-tx-008", "sample-rate-limit-rule", "/test",
+    9m, "192.0.2.40", "Blocked", "rate-tx-009", "sample-rate-limit-rule", "/test",
+    10m, "192.0.2.40", "Blocked", "rate-tx-010", "sample-rate-limit-rule", "/test",
+    1m, "192.0.2.41", "Allowed", "rate-tx-011", "sample-rate-limit-rule", "/test"
+]
+| extend TimeGenerated = now() - offset;
+SampleEvents
+| where TimeGenerated > ago(10m)
+| where RuleId == RateLimitRuleId
+| where Action =~ "Blocked"
+| summarize
+    blockedEvents = count(),
+    blockedTransactions = dcount(TransactionId)
+    by ClientIp, RuleId
+| where blockedTransactions >= 10
+| project ClientIp, RuleId, blockedEvents, blockedTransactions

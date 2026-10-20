@@ -1,0 +1,85 @@
+[
+  {
+    "alert_id": "sample-waf-low-001",
+    "severity": "low",
+    "source": "application_gateway_waf",
+    "resource_id": null,
+    "timestamp": "2026-10-20T21:00:00Z",
+    "recommended_action": "Review the isolated WAF match and confirm whether the request was expected.",
+    "sentinel": {
+      "system_alert_id": null,
+      "incident_arm_id": null,
+      "incident_number": null,
+      "incident_url": null
+    },
+    "evidence": {
+      "client_ip": "192.0.2.10",
+      "request_uri": "/catalog/item",
+      "rule_id": "sample-rule-1001",
+      "event_count": 1,
+      "distinct_transactions": 1,
+      "simulation": true
+    }
+  },
+  {
+    "alert_id": "sample-waf-medium-001",
+    "severity": "medium",
+    "source": "application_gateway_waf",
+    "resource_id": null,
+    "timestamp": "2026-10-20T21:05:00Z",
+    "recommended_action": "Review the repeated blocked requests and verify that the client is not an approved scanner or test.",
+    "sentinel": {
+      "system_alert_id": null,
+      "incident_arm_id": null,
+      "incident_number": null,
+      "incident_url": null
+    },
+    "evidence": {
+      "client_ip": "192.0.2.20",
+      "request_uri": "/search?q=sample",
+      "rule_id": "sample-rule-942100",
+      "event_count": 6,
+      "distinct_transactions": 6,
+      "simulation": true
+    }
+  },
+  {
+    "alert_id": "sample-entra-high-001",
+    "severity": "high",
+    "source": "entra_id",
+    "resource_id": null,
+    "timestamp": "2026-10-20T21:10:00Z",
+    "recommended_action": "Verify the sign-in with the account owner, inspect conditional access results, and follow the identity incident runbook.",
+    "sentinel": {
+      "system_alert_id": null,
+      "incident_arm_id": null,
+      "incident_number": null,
+      "incident_url": null
+    },
+    "evidence": {
+      "client_ip": "192.0.2.30",
+      "account": "sample.user@example.invalid",
+      "event_count": 12,
+      "simulation": true
+    }
+  },
+  {
+    "alert_id": "sample-defender-critical-001",
+    "severity": "critical",
+    "source": "defender_for_cloud",
+    "resource_id": null,
+    "timestamp": "2026-10-20T21:15:00Z",
+    "recommended_action": "Treat as a simulated high-priority finding: verify the alert in Defender for Cloud before containment or remediation.",
+    "sentinel": {
+      "system_alert_id": null,
+      "incident_arm_id": null,
+      "incident_number": null,
+      "incident_url": null
+    },
+    "evidence": {
+      "provider": "SIMULATED",
+      "alert_name": "Sample security finding (not a real Defender alert)",
+      "simulation": true
+    }
+  }
+]
