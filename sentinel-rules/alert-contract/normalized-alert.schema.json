@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:project:sentinel-rules:normalized-alert:1",
+  "title": "Project normalized security alert",
+  "description": "Project-owned response contract. It is not the native Microsoft Sentinel alert or incident schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "alert_id",
+    "severity",
+    "source",
+    "timestamp",
+    "recommended_action"
+  ],
+  "properties": {
+    "alert_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable identifier assigned by the normalizing workflow. It is not necessarily a Sentinel ID."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Originating data source or product, such as application_gateway_waf, entra_id, or defender_for_cloud."
+    },
+    "resource_id": {
+      "type": ["string", "null"],
+      "description": "Azure Resource Manager ID only when supplied by a real event; use null for samples or when unavailable."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC event time in RFC 3339 format."
+    },
+    "recommended_action": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sentinel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system_alert_id": { "type": ["string", "null"] },
+        "incident_arm_id": { "type": ["string", "null"] },
+        "incident_number": { "type": ["integer", "null"], "minimum": 1 },
+        "incident_url": { "type": ["string", "null"], "format": "uri" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Data-minimized evidence useful to triage. Do not include credentials, tokens, or unredacted sensitive request bodies.",
+      "additionalProperties": false,
+      "properties": {
+        "client_ip": { "type": "string" },
+        "request_uri": { "type": "string" },
+        "rule_id": { "type": "string" },
+        "event_count": { "type": "integer", "minimum": 0 },
+        "distinct_transactions": { "type": "integer", "minimum": 0 },
+        "account": { "type": "string" },
+        "provider": { "type": "string" },
+        "alert_name": { "type": "string" },
+        "native_severity": { "type": "string" },
+        "simulation": { "type": "boolean" }
+      }
+    }
+  }
+}

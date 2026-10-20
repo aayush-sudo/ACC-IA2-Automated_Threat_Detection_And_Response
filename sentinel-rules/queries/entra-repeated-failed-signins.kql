@@ -1,0 +1,29 @@
+// Conditional detection: this only works after Microsoft Entra ID Sign-in
+// logs are connected and SigninLogs is populated in this workspace.
+// Scenario: repeated failed sign-ins from one source IP.
+// Window: 15 minutes. Threshold: at least 10 failures.
+// Schema is documented by Microsoft Learn; query execution is not live-tested.
+// False positives: user error, expired credentials, shared egress, or clients
+// retrying silently. Validate ResultType and exclude approved test identities.
+SigninLogs
+| where TimeGenerated > ago(15m)
+| where ResultType != "0"
+| where isnotempty(IPAddress)
+| summarize
+    failures = count(),
+    affectedAccounts = dcount(UserPrincipalName),
+    sampleAccounts = make_set(UserPrincipalName, 10),
+    applications = make_set(AppDisplayName, 10),
+    firstSeen = min(TimeGenerated),
+    lastSeen = max(TimeGenerated)
+    by IPAddress
+| where failures >= 10
+| project
+    TimeGenerated = lastSeen,
+    IPAddress,
+    failures,
+    affectedAccounts,
+    sampleAccounts,
+    applications,
+    firstSeen,
+    lastSeen

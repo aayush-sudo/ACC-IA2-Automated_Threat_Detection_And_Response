@@ -1,0 +1,29 @@
+// Safe inline test of the dedicated-account, single-failure demo query shape.
+// Expected result: one row for demo.user@example.invalid with one failure.
+let DemoAccountUpn = "demo.user@example.invalid";
+let SampleSignins = datatable(
+    offset:timespan,
+    ResultType:string,
+    IPAddress:string,
+    UserPrincipalName:string,
+    AppDisplayName:string
+)
+[
+    1m, "50126", "192.0.2.60", "demo.user@example.invalid", "Sample App",
+    2m, "0", "192.0.2.60", "demo.user@example.invalid", "Sample App",
+    1m, "50126", "192.0.2.61", "other.user@example.invalid", "Sample App"
+]
+| extend TimeGenerated = now() - offset;
+SampleSignins
+| where TimeGenerated > ago(15m)
+| where UserPrincipalName =~ DemoAccountUpn
+| where ResultType != "0"
+| summarize
+    failureCount = count(),
+    IPAddress = take_any(IPAddress),
+    AppDisplayName = take_any(AppDisplayName),
+    firstSeen = min(TimeGenerated),
+    lastSeen = max(TimeGenerated)
+    by UserPrincipalName
+| where failureCount >= 1
+| project TimeGenerated = lastSeen, UserPrincipalName, IPAddress, AppDisplayName, failureCount

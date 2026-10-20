@@ -1,0 +1,56 @@
+[
+  {
+    "TimeGenerated": "2026-10-20T21:00:00Z",
+    "ClientIp": "192.0.2.20",
+    "Action": "Blocked",
+    "TransactionId": "sample-tx-001",
+    "RequestUri": "/search?q=sample",
+    "RuleId": "sample-rule-942100",
+    "Message": "Synthetic test event; not produced by Azure"
+  },
+  {
+    "TimeGenerated": "2026-10-20T21:01:00Z",
+    "ClientIp": "192.0.2.20",
+    "Action": "Blocked",
+    "TransactionId": "sample-tx-002",
+    "RequestUri": "/search?q=sample",
+    "RuleId": "sample-rule-942100",
+    "Message": "Synthetic test event; not produced by Azure"
+  },
+  {
+    "TimeGenerated": "2026-10-20T21:02:00Z",
+    "ClientIp": "192.0.2.20",
+    "Action": "Blocked",
+    "TransactionId": "sample-tx-003",
+    "RequestUri": "/search?q=sample",
+    "RuleId": "sample-rule-942100",
+    "Message": "Synthetic test event; not produced by Azure"
+  },
+  {
+    "TimeGenerated": "2026-10-20T21:03:00Z",
+    "ClientIp": "192.0.2.20",
+    "Action": "Blocked",
+    "TransactionId": "sample-tx-004",
+    "RequestUri": "/search?q=sample",
+    "RuleId": "sample-rule-942100",
+    "Message": "Synthetic test event; not produced by Azure"
+  },
+  {
+    "TimeGenerated": "2026-10-20T21:04:00Z",
+    "ClientIp": "192.0.2.20",
+    "Action": "Blocked",
+    "TransactionId": "sample-tx-005",
+    "RequestUri": "/search?q=sample",
+    "RuleId": "sample-rule-942100",
+    "Message": "Synthetic test event; not produced by Azure"
+  },
+  {
+    "TimeGenerated": "2026-10-20T21:05:00Z",
+    "ClientIp": "192.0.2.20",
+    "Action": "Blocked",
+    "TransactionId": "sample-tx-006",
+    "RequestUri": "/search?q=sample",
+    "RuleId": "sample-rule-942100",
+    "Message": "Synthetic test event; not produced by Azure"
+  }
+]

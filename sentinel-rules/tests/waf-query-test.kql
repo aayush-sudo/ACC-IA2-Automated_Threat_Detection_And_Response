@@ -1,0 +1,36 @@
+// Safe unit fixture for the aggregation in queries/waf-repeated-blocks.kql.
+// Run in Logs to prove the query shape against inline synthetic events.
+// Expected result: one row for 192.0.2.20 with 5 blocked events and 5 distinct
+// transactions. The allowed event and second IP must not meet the threshold.
+let SampleEvents = datatable(
+    offset:timespan,
+    ClientIp:string,
+    Action:string,
+    TransactionId:string,
+    RuleId:string,
+    RequestUri:string
+)
+[
+    1m, "192.0.2.20", "Blocked", "sample-tx-001", "sample-rule-1", "/sample",
+    2m, "192.0.2.20", "Blocked", "sample-tx-002", "sample-rule-1", "/sample",
+    3m, "192.0.2.20", "Blocked", "sample-tx-003", "sample-rule-1", "/sample",
+    4m, "192.0.2.20", "Blocked", "sample-tx-004", "sample-rule-1", "/sample",
+    5m, "192.0.2.20", "Blocked", "sample-tx-005", "sample-rule-1", "/sample",
+    6m, "192.0.2.20", "Allowed", "sample-tx-006", "sample-rule-1", "/sample",
+    1m, "192.0.2.21", "Blocked", "sample-tx-007", "sample-rule-1", "/sample"
+]
+| extend TimeGenerated = now() - offset;
+SampleEvents
+| where TimeGenerated > ago(15m)
+| where Action =~ "Blocked"
+| where isnotempty(ClientIp) and isnotempty(TransactionId)
+| summarize
+    blockedEvents = count(),
+    blockedTransactions = dcount(TransactionId),
+    ruleIds = make_set(RuleId, 20),
+    sampleUris = make_set(RequestUri, 5),
+    firstSeen = min(TimeGenerated),
+    lastSeen = max(TimeGenerated)
+    by ClientIp
+| where blockedTransactions >= 5
+| project ClientIp, blockedEvents, blockedTransactions, ruleIds, sampleUris
