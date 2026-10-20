@@ -1,0 +1,27 @@
+// Conditional detection/inventory query: requires Defender for Cloud alerts
+// to be integrated into this Sentinel workspace and present in SecurityAlert.
+// It reports recent alerts; it does not create Defender findings.
+// Window: 24 hours. No threshold: return each matching source alert.
+// Verify ProviderName/ProductName values in the target workspace before
+// relying on these filters. SecurityAlert's relevant columns are documented;
+// execution is not validated against a live workspace.
+// This is an alert inventory, not a severity filter; benign or informational
+// source alerts can also appear and require analyst triage.
+SecurityAlert
+| where TimeGenerated > ago(24h)
+| where ProductName has_any ("Defender for Cloud", "Azure Security Center")
+    or ProviderName has_any ("Defender for Cloud", "Azure Security Center")
+| project
+    TimeGenerated,
+    SystemAlertId,
+    AlertName,
+    AlertSeverity,
+    ProviderName,
+    ProductName,
+    CompromisedEntity,
+    ResourceId,
+    Description,
+    RemediationSteps,
+    AlertLink,
+    Entities
+| order by TimeGenerated desc

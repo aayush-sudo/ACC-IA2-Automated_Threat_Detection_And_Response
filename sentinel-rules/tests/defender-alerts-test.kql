@@ -1,0 +1,36 @@
+// Synthetic inline test for the Defender for Cloud alert filter.
+// Expected result: one simulated row named "Sample security finding".
+let SampleSecurityAlerts = datatable(
+    offset:timespan,
+    SystemAlertId:string,
+    AlertName:string,
+    AlertSeverity:string,
+    ProviderName:string,
+    ProductName:string,
+    CompromisedEntity:string,
+    ResourceId:string,
+    Description:string,
+    RemediationSteps:string,
+    AlertLink:string,
+    Entities:string
+)
+[
+    1h,
+    "simulated-alert-001",
+    "Sample security finding",
+    "High",
+    "Microsoft Defender for Cloud",
+    "Defender for Cloud",
+    "sample-resource",
+    "",
+    "Synthetic test row; not a real security alert",
+    "No action; sample only",
+    "",
+    "[]"
+]
+| extend TimeGenerated = now() - offset;
+SampleSecurityAlerts
+| where TimeGenerated > ago(24h)
+| where ProductName has_any ("Defender for Cloud", "Azure Security Center")
+    or ProviderName has_any ("Defender for Cloud", "Azure Security Center")
+| project TimeGenerated, SystemAlertId, AlertName, AlertSeverity, ProviderName, ProductName

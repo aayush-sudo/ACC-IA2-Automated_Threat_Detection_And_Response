@@ -1,0 +1,33 @@
+// Synthetic inline test for the conditional Entra sign-in detection.
+// Expected result: one row for 192.0.2.50 with 10 failures and two accounts.
+let SampleSignins = datatable(
+    offset:timespan,
+    ResultType:string,
+    IPAddress:string,
+    UserPrincipalName:string,
+    AppDisplayName:string
+)
+[
+    1m, "50126", "192.0.2.50", "sample.one@example.invalid", "Sample App",
+    2m, "50126", "192.0.2.50", "sample.one@example.invalid", "Sample App",
+    3m, "50126", "192.0.2.50", "sample.one@example.invalid", "Sample App",
+    4m, "50126", "192.0.2.50", "sample.one@example.invalid", "Sample App",
+    5m, "50126", "192.0.2.50", "sample.one@example.invalid", "Sample App",
+    6m, "50126", "192.0.2.50", "sample.two@example.invalid", "Sample App",
+    7m, "50126", "192.0.2.50", "sample.two@example.invalid", "Sample App",
+    8m, "50126", "192.0.2.50", "sample.two@example.invalid", "Sample App",
+    9m, "50126", "192.0.2.50", "sample.two@example.invalid", "Sample App",
+    10m, "50126", "192.0.2.50", "sample.two@example.invalid", "Sample App",
+    1m, "0", "192.0.2.51", "sample.success@example.invalid", "Sample App"
+]
+| extend TimeGenerated = now() - offset;
+SampleSignins
+| where TimeGenerated > ago(15m)
+| where ResultType != "0"
+| where isnotempty(IPAddress)
+| summarize
+    failures = count(),
+    affectedAccounts = dcount(UserPrincipalName)
+    by IPAddress
+| where failures >= 10
+| project IPAddress, failures, affectedAccounts

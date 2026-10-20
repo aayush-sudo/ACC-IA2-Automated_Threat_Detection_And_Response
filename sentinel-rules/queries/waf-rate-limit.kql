@@ -1,0 +1,32 @@
+// Scenario: identify bursts blocked by the WAF's configured rate-limit rule.
+// Requires Application Gateway WAF rate limiting to be configured and
+// diagnostic category routed in resource-specific mode to AGWFirewallLogs.
+// Replace the placeholder with Person 1's confirmed RuleId from a redacted
+// event. Window: 10 minutes. Threshold: at least 10 distinct transactions.
+// This query is not a generic rate detector until the rule ID is confirmed.
+// Query execution is not validated against a live workspace.
+// False positives: legitimate bursts from shared NAT/proxies or a rule whose
+// configured limit is below normal client behavior. Tune with the WAF owner.
+let RateLimitRuleId = "REPLACE_WITH_CONFIRMED_RATE_LIMIT_RULE_ID";
+AGWFirewallLogs
+| where TimeGenerated > ago(10m)
+| where RuleId == RateLimitRuleId
+| where Action =~ "Blocked"
+| where isnotempty(ClientIp) and isnotempty(TransactionId)
+| summarize
+    blockedEvents = count(),
+    blockedTransactions = dcount(TransactionId),
+    sampleUris = make_set(RequestUri, 5),
+    firstSeen = min(TimeGenerated),
+    lastSeen = max(TimeGenerated)
+    by ClientIp, RuleId
+| where blockedTransactions >= 10
+| project
+    TimeGenerated = lastSeen,
+    ClientIp,
+    RuleId,
+    blockedEvents,
+    blockedTransactions,
+    sampleUris,
+    firstSeen,
+    lastSeen
