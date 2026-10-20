@@ -51,6 +51,7 @@ class SentinelArtifactTests(unittest.TestCase):
                 "entra-repeated-failed-signins.kql",
                 "entra-single-failure-demo.kql",
                 "defender-cloud-alerts.kql",
+                "azure-activity-repeated-failures.kql",
             },
         )
         self.assertIn("AGWFirewallLogs", queries["waf-repeated-blocks.kql"])
@@ -61,6 +62,13 @@ class SentinelArtifactTests(unittest.TestCase):
             queries["entra-single-failure-demo.kql"],
         )
         self.assertIn("SecurityAlert", queries["defender-cloud-alerts.kql"])
+        self.assertIn(
+            "AzureActivity", queries["azure-activity-repeated-failures.kql"]
+        )
+        self.assertIn(
+            "FailedOperationCount >= 5",
+            queries["azure-activity-repeated-failures.kql"],
+        )
         self.assertTrue(
             all("not" in text.lower() and "live" in text.lower() for text in queries.values())
         )
@@ -77,6 +85,10 @@ class SentinelArtifactTests(unittest.TestCase):
             "defender-alerts-test.kql": (
                 "SampleSecurityAlerts",
                 "simulated-alert-001",
+            ),
+            "azure-activity-repeated-failures-test.kql": (
+                "sample-principal",
+                "FailedOperationCount >= 5",
             ),
         }
         for name, expected in fixtures.items():

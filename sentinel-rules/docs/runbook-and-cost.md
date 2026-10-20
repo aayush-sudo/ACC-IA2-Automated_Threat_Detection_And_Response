@@ -10,6 +10,7 @@ approve setup include:
 | Log Analytics workspace | Ingested GB by table/plan, retention beyond included period, archive/search operations, and region. |
 | Microsoft Sentinel | Analytics/log ingestion and selected commitment/tier; rates and free allowances vary by data source, plan, and region. |
 | WAF resource diagnostics | Log volume sent to the workspace; busy access/firewall logs can be high volume. Route only approved categories and monitor ingestion. |
+| Subscription Activity Log export | Subscription-wide administrative, security, health, and other selected categories may stream continuously to Log Analytics; ingestion volume and charges vary. |
 | Entra sign-in logs | Workspace ingestion volume and tenant/license/connector conditions. |
 | Defender for Cloud | Selected paid plan, protected resource count, and possible trial ending; free foundational CSPM is distinct from paid workload protection. |
 | Logic Apps | Trigger/action executions, connector plan, and any related integration services. |
@@ -66,6 +67,7 @@ did not create.
 | Rate-limit query returns none | Replace the placeholder with the confirmed `RuleId`, verify the rate-limit feature/configuration and action values, and inspect raw rows before changing threshold. |
 | `SigninLogs` not found | The Entra sign-in connector is not configured or is not writing to this workspace. Do not claim failed-sign-in detection until it is. |
 | `SecurityAlert` has no Defender rows | Confirm the current Defender integration and source alert, then inspect actual ProviderName/ProductName. No finding may exist. |
+| `AzureActivity` has no rows | Check the subscription Activity Log diagnostic setting. The current project policy assignment is resource-group-scoped even though its built-in definition targets the subscription resource; no setting, policy state, or remediation task was found. Obtain owner approval before assigning at subscription scope or remediating. |
 | Rule creates too many alerts | Inspect duplicate rule matches, shared NAT/scanners, schedule/lookback overlap, incident grouping, suppression, and source volume. Tune only against observed data. |
 | Incident exists but playbook does not run | Check automation rule scope/conditions, workflow enablement, trigger type, managed identity roles, connector connection, and run history. Compare exact trigger payload with mappings. |
 | Cross-tenant write fails | Confirm diagnostic destination restrictions and tenant authorization with both Azure owners; do not exchange service credentials as a workaround. |

@@ -1,0 +1,30 @@
+// Detect repeated failed Azure control-plane operations by one caller/IP pair.
+// Requires Azure Activity Log export to this workspace and live AzureActivity
+// rows. The actual workspace table and referenced columns were verified, but
+// this query currently returns no events because AzureActivity is empty.
+// Window: 15 minutes. Threshold: 5 failed Administrative operations.
+// False positives: automation retries, permission mistakes, and operator
+// mistakes. Investigate the caller and operations before taking action.
+AzureActivity
+| where TimeGenerated >= ago(15m)
+| where CategoryValue =~ "Administrative"
+| where ActivityStatusValue =~ "Failed"
+| where isnotempty(Caller)
+| summarize
+    TimeGenerated = max(TimeGenerated),
+    FailedOperationCount = count(),
+    OperationNames = make_set(OperationNameValue, 10),
+    ResourceGroups = make_set(ResourceGroup, 10),
+    ResourceIds = make_set(ResourceId, 10),
+    CorrelationIds = make_set(CorrelationId, 10)
+    by Caller, CallerIpAddress
+| where FailedOperationCount >= 5
+| project
+    TimeGenerated,
+    Caller,
+    CallerIpAddress,
+    FailedOperationCount,
+    OperationNames,
+    ResourceGroups,
+    ResourceIds,
+    CorrelationIds

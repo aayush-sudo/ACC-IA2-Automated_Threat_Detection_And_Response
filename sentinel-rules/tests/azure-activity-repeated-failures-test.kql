@@ -1,0 +1,46 @@
+// Synthetic-only test for azure-activity-repeated-failures.kql.
+// Expected result: one group with 5 failed operations for this synthetic caller.
+let SampleAzureActivity = datatable(
+    Offset:timespan,
+    Caller:string,
+    CallerIpAddress:string,
+    CategoryValue:string,
+    ActivityStatusValue:string,
+    OperationNameValue:string,
+    ResourceGroup:string,
+    ResourceId:string,
+    CorrelationId:string
+)
+[
+    4m, "sample-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "sample-rg", "/subscriptions/example/resourceGroups/sample-rg/providers/Microsoft.Compute/virtualMachines/sample-vm", "sample-correlation-1",
+    3m, "sample-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/write", "sample-rg", "/subscriptions/example/resourceGroups/sample-rg/providers/Microsoft.Compute/virtualMachines/sample-vm", "sample-correlation-2",
+    2m, "sample-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Compute/virtualMachines/delete", "sample-rg", "/subscriptions/example/resourceGroups/sample-rg/providers/Microsoft.Compute/virtualMachines/sample-vm", "sample-correlation-3",
+    1m, "sample-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Network/networkSecurityGroups/write", "sample-rg", "/subscriptions/example/resourceGroups/sample-rg/providers/Microsoft.Network/networkSecurityGroups/sample-nsg", "sample-correlation-4",
+    30s, "sample-principal", "192.0.2.99", "Administrative", "Failed", "Microsoft.Network/networkSecurityGroups/write", "sample-rg", "/subscriptions/example/resourceGroups/sample-rg/providers/Microsoft.Network/networkSecurityGroups/sample-nsg", "sample-correlation-5",
+    30s, "sample-principal", "192.0.2.99", "Administrative", "Succeeded", "Microsoft.Compute/virtualMachines/read", "sample-rg", "/subscriptions/example/resourceGroups/sample-rg/providers/Microsoft.Compute/virtualMachines/sample-vm", "sample-correlation-6",
+    30s, "other-principal", "192.0.2.100", "Security", "Failed", "Microsoft.Authorization/roleAssignments/write", "sample-rg", "/subscriptions/example/resourceGroups/sample-rg", "sample-correlation-7"
+]
+| extend TimeGenerated = now() - Offset;
+SampleAzureActivity
+| where TimeGenerated >= ago(15m)
+| where CategoryValue =~ "Administrative"
+| where ActivityStatusValue =~ "Failed"
+| where isnotempty(Caller)
+| summarize
+    TimeGenerated = max(TimeGenerated),
+    FailedOperationCount = count(),
+    OperationNames = make_set(OperationNameValue, 10),
+    ResourceGroups = make_set(ResourceGroup, 10),
+    ResourceIds = make_set(ResourceId, 10),
+    CorrelationIds = make_set(CorrelationId, 10)
+    by Caller, CallerIpAddress
+| where FailedOperationCount >= 5
+| project
+    TimeGenerated,
+    Caller,
+    CallerIpAddress,
+    FailedOperationCount,
+    OperationNames,
+    ResourceGroups,
+    ResourceIds,
+    CorrelationIds

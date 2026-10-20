@@ -41,6 +41,28 @@
    unhealthy statuses; the Defender alert API returned zero security alerts.
    Review these separately from Sentinel incidents.
 
+### Azure Activity Log export status
+
+The `AzureActivity` table exists and its schema was checked in the workspace,
+but it has no rows. The subscription has no Activity Log diagnostic setting.
+The existing built-in policy assignment named **Configure Azure Activity logs
+to stream to specified Log Analytics workspace** is scoped to
+`rg-threat-detection`; its definition targets the subscription resource and
+creates a subscription-level diagnostic setting. The read-only policy state
+query returned no states, and there is no remediation task. The assignment's
+managed identity has Monitoring Contributor and Log Analytics Contributor
+assignments at the resource-group/workspace scopes, but no subscription-scope
+role assignment.
+
+Do not create another assignment, change its scope, run remediation, or add
+subscription-level role assignments without approval. A correctly scoped
+subscription assignment and its remediation would route subscription-wide
+Activity Log categories into the existing workspace, with ongoing ingestion
+and potentially billable volume. Ask the subscription owner to approve this
+specific scope and cost impact first. See
+[`azure-activity-repeated-failures.kql`](../queries/azure-activity-repeated-failures.kql)
+for a prepared detection, not a live detection.
+
 ## Connect sources
 
 ### Person 1: WAF logs
@@ -150,6 +172,11 @@ wizard labels can change; confirm them in the current portal.
      alert threshold greater than 0; set the real rule ID before enabling.
    - Failed sign-ins: query frequency 5 minutes, lookup period 15 minutes,
      alert threshold greater than 0; only after Entra logs are connected.
+   - Azure Activity repeated failures: query frequency 5 minutes, lookup
+     period 15 minutes, alert threshold greater than 0; only after approved
+     subscription Activity Log export is configured and rows arrive. Start
+     at **Medium** severity, with `CallerIpAddress` mapped to IP address and
+     `Caller` retained as custom evidence (its value can be a principal ID).
    - Defender alerts: query frequency 15 minutes, lookup period 24 hours.
      This can re-alert on existing rows; prefer the native connector alert
      workflow or add a tested suppression/incident grouping strategy.
@@ -167,6 +194,15 @@ wizard labels can change; confirm them in the current portal.
    the portal when the current experience supports export, or record the
    portal-only configuration. Do not represent a query file as a deployed
    analytics rule.
+
+For Azure Activity, use
+[`azure-activity-repeated-failures.kql`](../queries/azure-activity-repeated-failures.kql).
+It groups failed Administrative operations by caller and caller IP over 15
+minutes and returns groups with at least five failures. Run it in Logs after
+the approved export is active; a query row is not itself a Sentinel alert or
+incident. Its synthetic fixture is
+[`azure-activity-repeated-failures-test.kql`](../tests/azure-activity-repeated-failures-test.kql)
+and does not generate an alert or incident.
 
 ## Verify an alert and incident
 
@@ -208,6 +244,8 @@ References checked for this guide:
 - [AGWFirewallLogs table schema](https://learn.microsoft.com/azure/azure-monitor/reference/tables/agwfirewalllogs)
 - [SigninLogs table schema](https://learn.microsoft.com/azure/azure-monitor/reference/tables/signinlogs)
 - [SecurityAlert table schema](https://learn.microsoft.com/azure/azure-monitor/reference/tables/securityalert)
+- [AzureActivity table schema](https://learn.microsoft.com/azure/azure-monitor/reference/tables/azureactivity)
+- [Create diagnostic settings with built-in Azure Policy](https://learn.microsoft.com/azure/azure-monitor/data-collection/diagnostic-settings-policy-built-in)
 
 ## Access and evidence
 

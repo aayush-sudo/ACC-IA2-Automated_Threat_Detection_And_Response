@@ -11,9 +11,11 @@
 - [x] Run local standard-library artifact tests and parse all JSON deliverables.
 - [x] Verify subscription, workspace, Sentinel onboarding resource, candidate table inventory, and Defender plan tiers with read-only Azure CLI/MCP calls.
 - [x] Check `SigninLogs`, `SecurityAlert`, `AGWFirewallLogs`, and `AzureActivity` for rows over the retained 30-day window.
-- [x] Execute all five production query files against their actual workspace tables; each parsed successfully and returned zero rows.
-- [x] Execute all five inline KQL fixtures in the workspace Logs query API and verify their expected synthetic aggregations.
+- [x] Execute all six production query files against their actual workspace tables; each parsed successfully and returned zero matching live rows.
+- [x] Execute all six inline KQL fixtures in the workspace Logs query API and verify their expected synthetic aggregations.
 - [x] Prepare a dedicated-account, single-failure Entra demo query and analytics-rule settings without enabling a connector or rule.
+- [x] Inspect the Azure Activity policy assignment, compliance state, remediation tasks, identity role scopes, actual table schema, and subscription diagnostic settings read-only.
+- [x] Add a schema-based Azure Activity repeated-failure query and synthetic inline fixture; do not present it as live detection.
 - [x] Document workspace setup, connectors, analytics rules, incidents, permissions, cost, and cleanup.
 - [x] Document Defender scope, findings, integration, and no-finding fallback.
 - [x] Document Person 1 / Person 3 handoffs and trigger-schema boundaries.
@@ -31,11 +33,24 @@
   onboarding resource.
 - `SigninLogs`, `SecurityAlert`, `AGWFirewallLogs`, and `AzureActivity` tables
   exist, but checks returned no rows in the last 30 days.
-- All five detection query files ran read-only against the actual workspace
-  tables and returned zero rows without schema errors. This validates parsing
+- The workspace's actual `AzureActivity` schema was read with `getschema`.
+  The query is based on verified columns and is prepared for repeated failed
+  Administrative events, but the subscription has no Activity Log diagnostic
+  setting and the table is empty.
+- The Activity Log policy assignment exists at the resource-group scope,
+  whereas its built-in definition targets the subscription resource and
+  deploys a subscription-level diagnostic setting. The read-only policy state
+  and remediation lists returned no rows. The assignment identity currently
+  has Monitoring Contributor and Log Analytics Contributor at the resource
+  group/workspace scopes, but no subscription-scope role. No policy,
+  diagnostic setting, role assignment, or remediation was changed.
+- The Azure Activity query and fixture are schema-tested and labeled
+  simulated-only; no query result from real events, alert, or incident exists.
+- All six detection query files ran read-only against the actual workspace
+  tables and returned zero rows/groups without schema errors. This validates parsing
   and referenced columns only; it does not prove detection behavior against
   real events.
-- All five inline KQL fixtures were run in workspace Logs using in-memory
+- All six inline KQL fixtures were run in workspace Logs using in-memory
   `datatable` rows; they returned the expected simulated results. The first
   rate-limit fixture run missed its 10-minute boundary due to a timestamp at
   exactly 10 minutes; the fixture was corrected to use events within the
