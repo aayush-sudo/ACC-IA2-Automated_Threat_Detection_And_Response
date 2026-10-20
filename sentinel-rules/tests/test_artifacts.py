@@ -52,9 +52,9 @@ class SentinelArtifactTests(unittest.TestCase):
                 "entra-single-failure-demo.kql",
                 "defender-cloud-alerts.kql",
                 "azure-activity-repeated-failures.kql",
-                "demo-azure-activity-repeated-failures.kql",
-                "demo-waf-repeated-blocks.kql",
-                "demo-entra-repeated-failed-signins.kql",
+                "azure-activity-repeated-failures-demo.kql",
+                "waf-repeated-blocks-demo.kql",
+                "entra-repeated-failed-signins-demo.kql",
             },
         )
         self.assertIn("AGWFirewallLogs", queries["waf-repeated-blocks.kql"])
@@ -78,15 +78,15 @@ class SentinelArtifactTests(unittest.TestCase):
 
     def test_standalone_demo_queries_have_no_live_table_dependencies(self):
         demo_queries = {
-            "demo-azure-activity-repeated-failures.kql": (
+            "azure-activity-repeated-failures-demo.kql": (
                 "FailedOperationCount >= 5",
                 "FailedOperationCount",
             ),
-            "demo-waf-repeated-blocks.kql": (
+            "waf-repeated-blocks-demo.kql": (
                 "blockedTransactions >= 5",
                 "blockedTransactions",
             ),
-            "demo-entra-repeated-failed-signins.kql": (
+            "entra-repeated-failed-signins-demo.kql": (
                 "failures >= 10",
                 "affectedAccounts",
             ),
@@ -134,10 +134,16 @@ class SentinelArtifactTests(unittest.TestCase):
 
     def test_each_query_has_an_inline_safe_kql_fixture(self):
         fixtures = {
-            "waf-query-test.kql": ("blockedTransactions >= 5", "192.0.2.20"),
+            "waf-repeated-blocks-test.kql": (
+                "blockedTransactions >= 5",
+                "192.0.2.20",
+            ),
             "waf-rate-limit-test.kql": ("blockedTransactions >= 10", "192.0.2.40"),
-            "entra-failed-signins-test.kql": ("failures >= 10", "192.0.2.50"),
-            "entra-single-failure-demo-test.kql": (
+            "entra-repeated-failed-signins-test.kql": (
+                "failures >= 10",
+                "192.0.2.50",
+            ),
+            "entra-single-failure-test.kql": (
                 "failureCount >= 1",
                 "demo.user@example.invalid",
             ),

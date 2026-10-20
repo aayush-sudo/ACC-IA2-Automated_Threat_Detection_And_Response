@@ -21,7 +21,7 @@ invoke a Logic App. `Simulation = true`, reserved documentation IPs, and
 
 ### 1. Repeated failed Azure administrative operations
 
-Open `queries/demo-azure-activity-repeated-failures.kql`, paste the full query,
+Open `queries/azure-activity-repeated-failures-demo.kql`, paste the full query,
 and click **Run**.
 
 Expected: one result row, `Caller=demo-principal`,
@@ -36,7 +36,7 @@ is delivering real events, and this query result is not a Sentinel alert.”
 
 ### 2. Repeated blocked web requests
 
-Open `queries/demo-waf-repeated-blocks.kql`, paste the full query, and click
+Open `queries/waf-repeated-blocks-demo.kql`, paste the full query, and click
 **Run**.
 
 Expected: one row for `ClientIp=192.0.2.20`, `blockedTransactions=5`, and
@@ -50,7 +50,7 @@ or a live Sentinel alert.”
 
 ### 3. Repeated failed sign-ins
 
-Open `queries/demo-entra-repeated-failed-signins.kql`, paste the full query,
+Open `queries/entra-repeated-failed-signins-demo.kql`, paste the full query,
 and click **Run**.
 
 Expected: one row for `IPAddress=192.0.2.50`, `failures=10`,
