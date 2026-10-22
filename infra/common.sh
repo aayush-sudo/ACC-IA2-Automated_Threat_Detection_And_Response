@@ -49,3 +49,6 @@ sanitize() {
 }
 
 utc_now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# winpath: path usable by the Windows az CLI (Git Bash) or unchanged elsewhere.
+winpath() { if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else printf '%s' "$1"; fi; }

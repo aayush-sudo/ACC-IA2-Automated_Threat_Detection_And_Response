@@ -1,0 +1,5 @@
+# Runtime on the VM comes from Ubuntu 24.04 apt packages (python3-flask, gunicorn);
+# these pins are for local development and tests.
+flask>=3.0,<4
+gunicorn>=22,<24
+pytest>=8,<9

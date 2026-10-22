@@ -1,0 +1,23 @@
+# Phase 2 local unit tests — 2026-10-22T09:03:23Z
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-8.4.2, pluggy-1.7.0 -- C:\Users\ANTHON~1\AppData\Local\Temp\claude\C--Projects-acc-ia2\ce0c8d4d-891a-47da-93ba-e826e8818639\scratchpad\venv\Scripts\python.exe
+rootdir: C:\Projects\acc-ia2
+collecting ... collected 15 items
+
+tests/test_app.py::test_home_page PASSED                                 [  6%]
+tests/test_app.py::test_health_is_json_ok PASSED                         [ 13%]
+tests/test_app.py::test_products_search_filters PASSED                   [ 20%]
+tests/test_app.py::test_products_search_is_html_escaped PASSED           [ 26%]
+tests/test_app.py::test_products_search_is_truncated PASSED              [ 33%]
+tests/test_app.py::test_login_get_and_post PASSED                        [ 40%]
+tests/test_app.py::test_access_log_fields PASSED                         [ 46%]
+tests/test_app.py::test_access_log_never_contains_secrets PASSED         [ 53%]
+tests/test_app.py::test_request_id_header PASSED                         [ 60%]
+tests/test_app.py::test_client_ip_from[None-10.0.0.1] PASSED             [ 66%]
+tests/test_app.py::test_client_ip_from[203.0.113.7-203.0.113.7] PASSED   [ 73%]
+tests/test_app.py::test_client_ip_from[203.0.113.7:51234-203.0.113.7] PASSED [ 80%]
+tests/test_app.py::test_client_ip_from[203.0.113.7:51234, 10.10.1.4-203.0.113.7] PASSED [ 86%]
+tests/test_app.py::test_client_ip_from[2001:db8::1-2001:db8::1] PASSED   [ 93%]
+tests/test_app.py::test_client_ip_from[[2001:db8::1]:443-2001:db8::1] PASSED [100%]
+
+============================= 15 passed in 0.46s ==============================

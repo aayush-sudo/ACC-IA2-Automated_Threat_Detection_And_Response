@@ -1,0 +1,38 @@
+# Phase 2 web app verification from inside the VNet (az vm run-command) â€” 2026-10-22T09:02:38Z
+Enable succeeded: 
+[stdout]
+== systemd
+active
+ExecStart={ path=/usr/bin/gunicorn ; argv[]=/usr/bin/gunicorn --workers 2 --bind 0.0.0.0:80 --error-logfile - app:app ; ignore_errors=no ; start_time=[Thu 2026-
+User=atdr
+== listening sockets
+LISTEN 0      2048         0.0.0.0:80        0.0.0.0:*    users:(("gunicorn",pid=2123,fd=5),("gunicorn",pid=2122,fd=5),("gunicorn",pid=2120,fd=5))
+== GET /health
+HTTP 200, 45 bytes
+{"service":"atdr-demo-portal","status":"ok"} 
+== GET /
+HTTP 200, 1500 bytes
+<!doctype html> <html lang="en"> <head>   <meta charset="utf-8">   <meta name="viewport" content="width=device-width, initial-scale=1">   <title>Home · ATDR Demo Portal</title>   <style>     body { f
+== GET /products?search=lock
+HTTP 200, 1404 bytes
+<!doctype html> <html lang="en"> <head>   <meta charset="utf-8">   <meta name="viewport" content="width=device-width, initial-scale=1">   <title>Products · ATDR Demo Portal</title>   <style>     body
+== GET /login
+HTTP 200, 1430 bytes
+<!doctype html> <html lang="en"> <head>   <meta charset="utf-8">   <meta name="viewport" content="width=device-width, initial-scale=1">   <title>Login · ATDR Demo Portal</title>   <style>     body { 
+== POST /login (dummy password must NOT appear in logs)
+HTTP 200
+== XSS-style input is HTML-escaped by the app
+Results for: <strong>&lt;b&gt;hi&lt;/b&gt;</strong>
+== client IP from X-Forwarded-For
+== last 7 JSON access-log lines (journald)
+{"timestamp":"2026-10-22T09:02:44.277+00:00","request_id":"856d0c22-a5ac-4fdd-a9d6-35f9c213c8ab","method":"GET","path":"/health","status":200,"client_ip":"127.0.0.1","duration_ms":0.14,"level":"INFO"}
+{"timestamp":"2026-10-22T09:02:44.291+00:00","request_id":"ac5676f2-9c27-4e00-b6ce-9f7284fb0eec","method":"GET","path":"/","status":200,"client_ip":"127.0.0.1","duration_ms":3.35,"level":"INFO"}
+{"timestamp":"2026-10-22T09:02:44.305+00:00","request_id":"4762a398-5799-438f-9e11-00d8ce42e768","method":"GET","path":"/products","status":200,"client_ip":"127.0.0.1","duration_ms":5.08,"level":"INFO"}
+{"timestamp":"2026-10-22T09:02:44.317+00:00","request_id":"08fa6bec-525a-4ca9-9d97-b49a213e9493","method":"GET","path":"/login","status":200,"client_ip":"127.0.0.1","duration_ms":1.45,"level":"INFO"}
+{"timestamp":"2026-10-22T09:02:44.327+00:00","request_id":"280ef3dc-d90f-48c4-bdaf-2ece392895eb","method":"POST","path":"/login","status":200,"client_ip":"127.0.0.1","duration_ms":1.5,"level":"INFO"}
+{"timestamp":"2026-10-22T09:02:44.337+00:00","request_id":"f154b05f-4a7f-488e-8412-f9f6f7565e47","method":"GET","path":"/products","status":200,"client_ip":"127.0.0.1","duration_ms":3.01,"level":"INFO"}
+{"timestamp":"2026-10-22T09:02:44.342+00:00","request_id":"33bf2f87-33d4-4ab0-a5c8-0fda9baf5b1d","method":"GET","path":"/health","status":200,"client_ip":"203.0.113.7","duration_ms":0.14,"level":"INFO"}
+== password leak check: 0 matches
+
+[stderr]
+
