@@ -1,0 +1,61 @@
+# Phase 3 — Low-severity rejection test via Sentinel incidents/runPlaybook API
+# command: bash response/test-playbook.sh Low "ATDR TEST – manual (Low, expect rejection)"
+[2026-10-22T20:19:58Z] Creating incident: ATDR TEST – manual (Low, expect rejection) (severity Low)
+[2026-10-22T20:20:06Z] Incident #2 created (id db2ead58-6ff7-4292-9811-31616d9a4bd9)
+[2026-10-22T20:20:06Z] Running playbook on incident #2 (incidents/runPlaybook)
+[2026-10-22T20:20:15Z] Waiting for the Logic App run
+[2026-10-22T20:20:28Z] Run 08584089064707949098638030043CU25 finished
+{
+  "end": "2026-10-22T20:20:19.1977166Z",
+  "error": {
+    "code": "Rejected",
+    "message": "Validation failed: severity=Low, vmHttpStatus=200, Project=ATDR, Role=TestBackend"
+  },
+  "run": "08584089064707949098638030043CU25",
+  "start": "2026-10-22T20:20:14.687241Z",
+  "status": "Failed"
+}
+== Actions (start order)
+Action                 Status     Code          End
+---------------------  ---------  ------------  ----------------------------
+Incident               Succeeded  OK            2026-10-22T20:20:15.0691189Z
+Filter_IP_entities     Succeeded  NotSpecified  2026-10-22T20:20:15.1089284Z
+Client_IP              Succeeded  OK            2026-10-22T20:20:15.1279755Z
+Get_VM                 Succeeded  OK            2026-10-22T20:20:15.54901Z
+Is_valid               Cancelled  Terminated    2026-10-22T20:20:19.2413372Z
+Comment_rejected       Succeeded  Created       2026-10-22T20:20:19.1811937Z
+Is_high                Skipped    Terminated    2026-10-22T20:20:19.9297066Z
+Containment            Skipped    Terminated    2026-10-22T20:20:19.6945322Z
+Get_NIC                Skipped    Terminated    2026-10-22T20:20:19.299798Z
+Original_NSG           Skipped    Terminated    2026-10-22T20:20:19.3182582Z
+Already_isolated       Skipped    Terminated    2026-10-22T20:20:19.33765Z
+Tags_with_OriginalNsg  Skipped    Terminated    2026-10-22T20:20:19.3548965Z
+a_Tag_OriginalNsg      Skipped    Terminated    2026-10-22T20:20:19.3725007Z
+Resource_group_id      Skipped    Terminated    2026-10-22T20:20:19.3941002Z
+b_Snapshot_OS_disk     Skipped    Terminated    2026-10-22T20:20:19.4117122Z
+Isolation_NSG_ref      Skipped    Terminated    2026-10-22T20:20:19.5382286Z
+c_Isolate_NIC          Skipped    Terminated    2026-10-22T20:20:19.5580337Z
+Quarantine_tags        Skipped    Terminated    2026-10-22T20:20:19.5797815Z
+d_Tag_quarantine       Skipped    Terminated    2026-10-22T20:20:19.6003326Z
+e_Verify_NIC           Skipped    Terminated    2026-10-22T20:20:19.618848Z
+e_Verify_snapshot      Skipped    Terminated    2026-10-22T20:20:19.6381428Z
+Containment_steps      Skipped    Terminated    2026-10-22T20:20:19.7128406Z
+Filter_verification    Skipped    Terminated    2026-10-22T20:20:19.7296665Z
+Comment_high           Skipped    Terminated    2026-10-22T20:20:19.7658985Z
+Notification_high      Skipped    Terminated    2026-10-22T20:20:19.7831584Z
+g_Notify_high          Skipped    Terminated    2026-10-22T20:20:19.8005273Z
+Containment_complete   Skipped    Terminated    2026-10-22T20:20:19.8546509Z
+Comment_medium         Skipped    Terminated    2026-10-22T20:20:19.8736901Z
+Notification_medium    Skipped    Terminated    2026-10-22T20:20:19.8902132Z
+g_Notify_medium        Skipped    Terminated    2026-10-22T20:20:19.9107314Z
+== Incident #2 comments
+ATDR playbook atdr-playbook-contain: REJECTED, no action taken.
+   Severity: Low (allowed: Medium, High)
+   Protected VM lookup: HTTP 200
+   VM tags: Project=ATDR, Role=TestBackend (required: Project=ATDR, Role=TestBackend)
+   Run: 08584089064707949098638030043CU25
+== State after run
+  NIC NSG:   atdr-nsg-backend
+  VM tags:   {"Project":"ATDR","Role":"TestBackend"}
+  Snapshots: []
+INCIDENT_NUMBER=2 RUN_ID=08584089064707949098638030043CU25

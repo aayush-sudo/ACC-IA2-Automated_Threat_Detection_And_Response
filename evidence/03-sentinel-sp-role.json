@@ -1,0 +1,16 @@
+// captured 2026-10-22T19:26:38Z — Azure Security Insights service principal and its role on rg-atdr (read-only check; no principals created)
+{
+  "accountEnabled": true,
+  "appId": "98785600-1bb7-4fb9-b9fa-19afe2c8a360",
+  "displayName": "Azure Security Insights",
+  "objectId": "17369180-a23f-4720-9ff0-e5b90de5bca6",
+  "servicePrincipalType": "Application"
+}
+[
+  {
+    "createdOn": "2026-10-22T09:09:42.103656+00:00",
+    "principalType": "ServicePrincipal",
+    "role": "Microsoft Sentinel Automation Contributor",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  }
+]

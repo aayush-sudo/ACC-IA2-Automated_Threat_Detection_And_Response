@@ -1,0 +1,29 @@
+# Phase 3 — rollback test: bash response/rollback.sh --delete-snapshot
+# started 2026-10-22T20:16:18Z
+[2026-10-22T20:16:34Z] VM atdr-vm-backend: SecurityStatus='Quarantined' IncidentNumber='1'
+[2026-10-22T20:16:37Z] NIC NSG now:      atdr-nsg-isolation
+[2026-10-22T20:16:37Z] OriginalNsg tag:  atdr-nsg-backend
+[2026-10-22T20:16:37Z] Re-attaching atdr-nsg-backend to atdr-vm-backendVMNic
+[2026-10-22T20:16:43Z] Removing quarantine tags
+[2026-10-22T20:18:37Z] Deleting snapshot atdr-snap-1
+[2026-10-22T20:18:42Z] Verify
+  NIC NSG:  atdr-nsg-backend
+  VM tags:  {"Project":"ATDR","Role":"TestBackend"}
+  Snapshots in rg-atdr: 
+exit=0
+
+## Independent post-rollback checks — 2026-10-22T20:19:04Z
+### NSG attachments
+atdr-nsg-backend attached NICs: 1
+atdr-nsg-isolation attached NICs: 0
+### az snapshot list -g rg-atdr
+[]
+### In-VM check via run-command (service + /health + outbound DNS/HTTPS)
+Enable succeeded: 
+[stdout]
+service: active
+health: {"service":"atdr-demo-portal","status":"ok"} HTTP 200
+outbound: HTTP 200
+
+[stderr]
+

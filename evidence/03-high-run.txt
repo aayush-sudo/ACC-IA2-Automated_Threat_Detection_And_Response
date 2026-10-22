@@ -1,0 +1,87 @@
+# Phase 3 — High-severity playbook test on incident #1 'ATDR TEST – manual'
+# Triggered via Sentinel incidents/runPlaybook API (api-version 2025-07-01-preview) at 2026-10-22T19:26:48Z
+# Independent verification captured 2026-10-22T19:37:54Z
+
+## Logic App run
+{
+  "end": "2026-10-22T19:27:11.0451295Z",
+  "error": null,
+  "run": "08584089096676388077144207807CU23",
+  "start": "2026-10-22T19:26:57.8435914Z",
+  "status": "Succeeded"
+}
+
+## Run actions (start order)
+Action                 Status     Code           End
+---------------------  ---------  -------------  ----------------------------
+Incident               Succeeded  OK             2026-10-22T19:26:58.3604198Z
+Filter_IP_entities     Succeeded  NotSpecified   2026-10-22T19:26:58.4264755Z
+Client_IP              Succeeded  OK             2026-10-22T19:26:58.4484393Z
+Get_VM                 Succeeded  OK             2026-10-22T19:26:59.0484017Z
+Is_valid               Succeeded  NotSpecified   2026-10-22T19:26:59.1687305Z
+Comment_rejected       Skipped    ActionSkipped  2026-10-22T19:26:59.1237798Z
+Is_high                Succeeded  NotSpecified   2026-10-22T19:27:10.9764102Z
+Containment            Succeeded  NotSpecified   2026-10-22T19:27:05.9364883Z
+Get_NIC                Succeeded  OK             2026-10-22T19:26:59.8070015Z
+Original_NSG           Succeeded  OK             2026-10-22T19:26:59.8321933Z
+Already_isolated       Succeeded  OK             2026-10-22T19:26:59.8555632Z
+Tags_with_OriginalNsg  Succeeded  OK             2026-10-22T19:26:59.8803168Z
+a_Tag_OriginalNsg      Succeeded  OK             2026-10-22T19:27:00.1366691Z
+Resource_group_id      Succeeded  OK             2026-10-22T19:27:00.1600029Z
+b_Snapshot_OS_disk     Succeeded  OK             2026-10-22T19:27:03.6626056Z
+Isolation_NSG_ref      Succeeded  OK             2026-10-22T19:27:03.6993338Z
+c_Isolate_NIC          Succeeded  OK             2026-10-22T19:27:04.4643212Z
+Quarantine_tags        Succeeded  OK             2026-10-22T19:27:04.5015841Z
+d_Tag_quarantine       Succeeded  OK             2026-10-22T19:27:05.1832423Z
+e_Verify_NIC           Succeeded  OK             2026-10-22T19:27:05.7285591Z
+e_Verify_snapshot      Succeeded  OK             2026-10-22T19:27:05.8166778Z
+Containment_steps      Succeeded  NotSpecified   2026-10-22T19:27:06.0297664Z
+Filter_verification    Succeeded  NotSpecified   2026-10-22T19:27:06.0855033Z
+Comment_high           Succeeded  Created        2026-10-22T19:27:10.0187394Z
+Notification_high      Succeeded  OK             2026-10-22T19:27:10.0561593Z
+g_Notify_high          Succeeded  NoContent      2026-10-22T19:27:10.7003671Z
+Containment_complete   Succeeded  NotSpecified   2026-10-22T19:27:10.7960409Z
+Comment_medium         Skipped    ActionSkipped  2026-10-22T19:27:10.8340408Z
+Notification_medium    Skipped    ActionSkipped  2026-10-22T19:27:10.8729181Z
+g_Notify_medium        Skipped    ActionSkipped  2026-10-22T19:27:10.9001173Z
+
+## NIC (expect atdr-nsg-isolation)
+{
+  "nic": "atdr-vm-backendVMNic",
+  "nsg": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Network/networkSecurityGroups/atdr-nsg-isolation",
+  "provisioningState": "Succeeded"
+}
+
+## VM tags (expect OriginalNsg, SecurityStatus=Quarantined, IncidentNumber=1, QuarantinedAt)
+{
+  "IncidentNumber": "1",
+  "OriginalNsg": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Network/networkSecurityGroups/atdr-nsg-backend",
+  "Project": "ATDR",
+  "QuarantinedAt": "2026-10-22T19:27:04.5012607Z",
+  "Role": "TestBackend",
+  "SecurityStatus": "Quarantined"
+}
+
+## Snapshot
+{
+  "diskSizeGB": 30,
+  "incremental": true,
+  "name": "atdr-snap-1",
+  "provisioningState": "Succeeded",
+  "sourceDisk": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/disks/atdr-vm-backend_OsDisk_1_a8144fea9daf4aa4ace40b7664bd4e3b",
+  "tags": {
+    "IncidentNumber": "1",
+    "Project": "ATDR",
+    "Purpose": "Forensics"
+  },
+  "timeCreated": "2026-10-22T19:27:00.595495+00:00"
+}
+
+## Incident #1 comments (Sentinel API)
+[
+  {
+    "author": "Comment created from playbook - atdr-playbook-contain",
+    "created": "2026-10-22T19:27:08.5890112Z",
+    "message": "<b>ATDR playbook atdr-playbook-contain: HIGH severity containment</b><br>Incident #1: ATDR TEST – manual<br>Client IP: not present in incident<br>Protected VM: atdr-vm-backend (from playbook parameter, not from the alert)<br>Containment scope result: Succeeded<br>Steps:<br>Get_NIC: Succeeded at 2026-10-22T19:26:59.8070015Z<br>Original_NSG: Succeeded at 2026-10-22T19:26:59.8321933Z<br>Already_isolated: Succeeded at 2026-10-22T19:26:59.8555632Z<br>Tags_with_OriginalNsg: Succeeded at 2026-10-22T19:26:59.8803168Z<br>a_Tag_OriginalNsg: Succeeded at 2026-10-22T19:27:00.1366691Z<br>Resource_group_id: Succeeded at 2026-10-22T19:27:00.1600029Z<br>b_Snapshot_OS_disk: Succeeded at 2026-10-22T19:27:03.6626056Z<br>Isolation_NSG_ref: Succeeded at 2026-10-22T19:27:03.6993338Z<br>c_Isolate_NIC: Succeeded at 2026-10-22T19:27:04.4643212Z<br>Quarantine_tags: Succeeded at 2026-10-22T19:27:04.5015841Z<br>d_Tag_quarantine: Succeeded at 2026-10-22T19:27:05.1832423Z<br>e_Verify_NIC: Succeeded at 2026-10-22T19:27:05.7285591Z<br>e_Verify_snapshot: Succeeded at 2026-10-22T19:27:05.8166778Z<br>Verification: Succeeded at 2026-10-22T19:27:05.8790255Z<br>Verification: NIC isolated = True; snapshot atdr-snap-1 state = Succeeded; verified at 2026-10-22T19:27:05.8787280Z<br>Rollback: response/rollback.sh (re-attaches the NSG stored in VM tag OriginalNsg)<br>Run: 08584089096676388077144207807CU23"
+  }
+]
