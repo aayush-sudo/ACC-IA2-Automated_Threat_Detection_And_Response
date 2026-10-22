@@ -1,0 +1,609 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "actions": {
+    "Client_IP": {
+      "inputs": "@if(empty(body('Filter_IP_entities')), 'not present in incident', coalesce(first(body('Filter_IP_entities'))?['properties']?['address'], 'not present in incident'))",
+      "runAfter": {
+        "Filter_IP_entities": [
+          "Succeeded"
+        ]
+      },
+      "type": "Compose"
+    },
+    "Filter_IP_entities": {
+      "inputs": {
+        "from": "@coalesce(triggerBody()?['object']?['properties']?['relatedEntities'], json('[]'))",
+        "where": "@equals(toLower(coalesce(item()?['kind'], '')), 'ip')"
+      },
+      "runAfter": {
+        "Incident": [
+          "Succeeded"
+        ]
+      },
+      "type": "Query"
+    },
+    "Get_VM": {
+      "inputs": {
+        "authentication": {
+          "audience": "https://management.azure.com/",
+          "type": "ManagedServiceIdentity"
+        },
+        "method": "GET",
+        "uri": "https://management.azure.com@{parameters('protectedVmId')}?api-version=2024-07-01"
+      },
+      "runAfter": {
+        "Client_IP": [
+          "Succeeded"
+        ]
+      },
+      "type": "Http"
+    },
+    "Incident": {
+      "inputs": {
+        "armId": "@triggerBody()?['object']?['id']",
+        "createdTimeUtc": "@triggerBody()?['object']?['properties']?['createdTimeUtc']",
+        "number": "@triggerBody()?['object']?['properties']?['incidentNumber']",
+        "playbookStartUtc": "@{trigger()?['startTime']}",
+        "runId": "@{workflow()?['run']?['name']}",
+        "severity": "@triggerBody()?['object']?['properties']?['severity']",
+        "title": "@triggerBody()?['object']?['properties']?['title']",
+        "url": "@triggerBody()?['object']?['properties']?['incidentUrl']"
+      },
+      "runAfter": {},
+      "type": "Compose"
+    },
+    "Is_high": {
+      "actions": {
+        "Comment_high": {
+          "inputs": {
+            "authentication": {
+              "audience": "https://management.azure.com/",
+              "type": "ManagedServiceIdentity"
+            },
+            "body": {
+              "properties": {
+                "message": "<b>ATDR playbook atdr-playbook-contain: HIGH severity containment</b><br>Incident #@{outputs('Incident')?['number']}: @{outputs('Incident')?['title']}<br>Client IP: @{outputs('Client_IP')}<br>Protected VM: @{body('Get_VM')?['name']} (from playbook parameter, not from the alert)<br>Containment scope result: @{actions('Containment')?['status']}<br>Steps:<br>@{join(body('Containment_steps'), '<br>')}<br>Verification: NIC isolated = @{outputs('Verification_result')?['nicIsolated']}; snapshot atdr-snap-@{outputs('Incident')?['number']} state = @{outputs('Verification_result')?['snapshotState']}; verified at @{outputs('Verification_result')?['isolationVerifiedUtc']}<br>Rollback: response/rollback.sh (re-attaches the NSG stored in VM tag OriginalNsg)<br>Run: @{outputs('Incident')?['runId']}"
+              }
+            },
+            "method": "PUT",
+            "uri": "https://management.azure.com@{outputs('Incident')?['armId']}/comments/@{guid()}?api-version=2024-03-01"
+          },
+          "runAfter": {
+            "Verification_result": [
+              "Succeeded"
+            ]
+          },
+          "type": "Http"
+        },
+        "Containment": {
+          "actions": {
+            "Already_isolated": {
+              "inputs": "@equals(toLower(outputs('Original_NSG')), toLower(parameters('isolationNsgId')))",
+              "runAfter": {
+                "Original_NSG": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose"
+            },
+            "Get_NIC": {
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.azure.com/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "method": "GET",
+                "uri": "https://management.azure.com@{body('Get_VM')?['properties']?['networkProfile']?['networkInterfaces']?[0]?['id']}?api-version=2024-05-01"
+              },
+              "runAfter": {},
+              "type": "Http"
+            },
+            "Isolation_NSG_ref": {
+              "inputs": {
+                "id": "@parameters('isolationNsgId')"
+              },
+              "runAfter": {
+                "b_Snapshot_OS_disk": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose"
+            },
+            "Original_NSG": {
+              "inputs": "@coalesce(body('Get_NIC')?['properties']?['networkSecurityGroup']?['id'], 'none')",
+              "runAfter": {
+                "Get_NIC": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose"
+            },
+            "Quarantine_tags": {
+              "inputs": "@union(outputs('Tags_with_OriginalNsg'), json(concat('{\"SecurityStatus\":\"Quarantined\",\"IncidentNumber\":\"', string(outputs('Incident')?['number']), '\",\"QuarantinedAt\":\"', utcNow(), '\"}')))",
+              "runAfter": {
+                "c_Isolate_NIC": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose"
+            },
+            "Resource_group_id": {
+              "inputs": "@first(split(parameters('protectedVmId'), '/providers/'))",
+              "runAfter": {
+                "a_Tag_OriginalNsg": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose"
+            },
+            "Tags_with_OriginalNsg": {
+              "inputs": "@setProperty(coalesce(body('Get_VM')?['tags'], json('{}')), 'OriginalNsg', if(outputs('Already_isolated'), coalesce(body('Get_VM')?['tags']?['OriginalNsg'], 'unknown'), outputs('Original_NSG')))",
+              "runAfter": {
+                "Already_isolated": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose"
+            },
+            "Verification": {
+              "inputs": {
+                "alreadyIsolatedBefore": "@outputs('Already_isolated')",
+                "isolationVerifiedUtc": "@utcNow()",
+                "nicIsolated": "@equals(toLower(coalesce(body('e_Verify_NIC')?['properties']?['networkSecurityGroup']?['id'], '')), toLower(parameters('isolationNsgId')))",
+                "nicNsgId": "@body('e_Verify_NIC')?['properties']?['networkSecurityGroup']?['id']",
+                "originalNsgRecorded": "@outputs('Tags_with_OriginalNsg')?['OriginalNsg']",
+                "snapshotName": "@body('e_Verify_snapshot')?['name']",
+                "snapshotState": "@body('e_Verify_snapshot')?['properties']?['provisioningState']",
+                "snapshotSucceeded": "@equals(body('e_Verify_snapshot')?['properties']?['provisioningState'], 'Succeeded')"
+              },
+              "runAfter": {
+                "e_Verify_snapshot": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose"
+            },
+            "a_Tag_OriginalNsg": {
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.azure.com/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "body": {
+                  "tags": "@outputs('Tags_with_OriginalNsg')"
+                },
+                "method": "PATCH",
+                "uri": "https://management.azure.com@{parameters('protectedVmId')}?api-version=2024-07-01"
+              },
+              "runAfter": {
+                "Tags_with_OriginalNsg": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Http"
+            },
+            "b_Snapshot_OS_disk": {
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.azure.com/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "body": {
+                  "location": "@body('Get_VM')?['location']",
+                  "properties": {
+                    "creationData": {
+                      "createOption": "Copy",
+                      "sourceResourceId": "@body('Get_VM')?['properties']?['storageProfile']?['osDisk']?['managedDisk']?['id']"
+                    },
+                    "incremental": true
+                  },
+                  "sku": {
+                    "name": "Standard_LRS"
+                  },
+                  "tags": {
+                    "IncidentNumber": "@{outputs('Incident')?['number']}",
+                    "Project": "ATDR",
+                    "Purpose": "Forensics"
+                  }
+                },
+                "method": "PUT",
+                "uri": "https://management.azure.com@{outputs('Resource_group_id')}/providers/Microsoft.Compute/snapshots/atdr-snap-@{outputs('Incident')?['number']}?api-version=2024-03-02"
+              },
+              "runAfter": {
+                "Resource_group_id": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Http"
+            },
+            "c_Isolate_NIC": {
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.azure.com/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "body": "@setProperty(body('Get_NIC'), 'properties', setProperty(body('Get_NIC')?['properties'], 'networkSecurityGroup', outputs('Isolation_NSG_ref')))",
+                "method": "PUT",
+                "uri": "https://management.azure.com@{body('Get_NIC')?['id']}?api-version=2024-05-01"
+              },
+              "runAfter": {
+                "Isolation_NSG_ref": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Http"
+            },
+            "d_Tag_quarantine": {
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.azure.com/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "body": {
+                  "tags": "@outputs('Quarantine_tags')"
+                },
+                "method": "PATCH",
+                "uri": "https://management.azure.com@{parameters('protectedVmId')}?api-version=2024-07-01"
+              },
+              "runAfter": {
+                "Quarantine_tags": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Http"
+            },
+            "e_Verify_NIC": {
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.azure.com/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "method": "GET",
+                "uri": "https://management.azure.com@{body('Get_NIC')?['id']}?api-version=2024-05-01"
+              },
+              "runAfter": {
+                "d_Tag_quarantine": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Http"
+            },
+            "e_Verify_snapshot": {
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.azure.com/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "method": "GET",
+                "uri": "https://management.azure.com@{outputs('Resource_group_id')}/providers/Microsoft.Compute/snapshots/atdr-snap-@{outputs('Incident')?['number']}?api-version=2024-03-02"
+              },
+              "runAfter": {
+                "e_Verify_NIC": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Http"
+            }
+          },
+          "runAfter": {},
+          "type": "Scope"
+        },
+        "Containment_complete": {
+          "actions": {},
+          "else": {
+            "actions": {
+              "Terminate_incomplete": {
+                "inputs": {
+                  "runError": {
+                    "code": "ContainmentIncomplete",
+                    "message": "Containment=@{actions('Containment')?['status']}, nicIsolated=@{outputs('Verification_result')?['nicIsolated']}, snapshot=@{outputs('Verification_result')?['snapshotState']}"
+                  },
+                  "runStatus": "Failed"
+                },
+                "runAfter": {},
+                "type": "Terminate"
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@actions('Containment')?['status']",
+                  "Succeeded"
+                ]
+              },
+              {
+                "equals": [
+                  "@outputs('Verification_result')?['nicIsolated']",
+                  true
+                ]
+              },
+              {
+                "equals": [
+                  "@outputs('Verification_result')?['snapshotSucceeded']",
+                  true
+                ]
+              }
+            ]
+          },
+          "runAfter": {
+            "g_Notify_high": [
+              "Succeeded",
+              "Failed"
+            ]
+          },
+          "type": "If"
+        },
+        "Containment_steps": {
+          "inputs": {
+            "from": "@result('Containment')",
+            "select": "@concat(item()?['name'], ': ', item()?['status'], ' at ', coalesce(item()?['endTime'], '-'), if(empty(item()?['error']), '', concat(' (', coalesce(item()?['error']?['code'], ''), ')')))"
+          },
+          "runAfter": {
+            "Containment": [
+              "Succeeded",
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          },
+          "type": "Select"
+        },
+        "Filter_verification": {
+          "inputs": {
+            "from": "@result('Containment')",
+            "where": "@and(equals(item()?['name'], 'Verification'), equals(item()?['status'], 'Succeeded'))"
+          },
+          "runAfter": {
+            "Containment_steps": [
+              "Succeeded"
+            ]
+          },
+          "type": "Query"
+        },
+        "Notification_high": {
+          "inputs": "@concat('**ATDR containment: incident #', string(outputs('Incident')?['number']), ' (', outputs('Incident')?['severity'], ')**\n', 'Title: ', outputs('Incident')?['title'], '\n', 'Client IP: ', outputs('Client_IP'), '\n', 'VM: ', body('Get_VM')?['name'], '\n', 'Incident created: ', string(outputs('Incident')?['createdTimeUtc']), '\n', 'Playbook started: ', outputs('Incident')?['playbookStartUtc'], '\n', 'Containment: ', actions('Containment')?['status'], '\n', join(body('Containment_steps'), '\n'), '\n', 'NIC isolated: ', string(outputs('Verification_result')?['nicIsolated']), ' | snapshot: ', string(outputs('Verification_result')?['snapshotState']), ' | verified at ', string(outputs('Verification_result')?['isolationVerifiedUtc']), '\n', 'Incident comment: ', actions('Comment_high')?['status'], '\n', 'Run: ', outputs('Incident')?['runId'])",
+          "runAfter": {
+            "Comment_high": [
+              "Succeeded",
+              "Failed"
+            ]
+          },
+          "type": "Compose"
+        },
+        "Verification_result": {
+          "inputs": "@if(empty(body('Filter_verification')), json('{\"nicIsolated\":false,\"snapshotSucceeded\":false,\"snapshotState\":\"not verified\",\"isolationVerifiedUtc\":\"-\"}'), first(body('Filter_verification'))?['outputs'])",
+          "runAfter": {
+            "Filter_verification": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose"
+        },
+        "g_Notify_high": {
+          "inputs": {
+            "body": {
+              "content": "@{substring(outputs('Notification_high'), 0, min(length(outputs('Notification_high')), 1900))}",
+              "username": "ATDR Playbook"
+            },
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "method": "POST",
+            "uri": "@parameters('notifyTo')"
+          },
+          "runAfter": {
+            "Notification_high": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "secureData": {
+              "properties": [
+                "inputs"
+              ]
+            }
+          },
+          "type": "Http"
+        }
+      },
+      "else": {
+        "actions": {
+          "Comment_medium": {
+            "inputs": {
+              "authentication": {
+                "audience": "https://management.azure.com/",
+                "type": "ManagedServiceIdentity"
+              },
+              "body": {
+                "properties": {
+                  "message": "<b>ATDR playbook atdr-playbook-contain: MEDIUM severity, notify only</b><br>Incident #@{outputs('Incident')?['number']}: @{outputs('Incident')?['title']}<br>Client IP: @{outputs('Client_IP')}<br>No containment performed (policy: only High severity isolates the backend). Team notified.<br>Run: @{outputs('Incident')?['runId']}"
+                }
+              },
+              "method": "PUT",
+              "uri": "https://management.azure.com@{outputs('Incident')?['armId']}/comments/@{guid()}?api-version=2024-03-01"
+            },
+            "runAfter": {},
+            "type": "Http"
+          },
+          "Notification_medium": {
+            "inputs": "@concat('**ATDR alert: incident #', string(outputs('Incident')?['number']), ' (', outputs('Incident')?['severity'], ', notify only)**\n', 'Title: ', outputs('Incident')?['title'], '\n', 'Client IP: ', outputs('Client_IP'), '\n', 'VM: ', body('Get_VM')?['name'], ' (no action taken)\n', 'Incident created: ', string(outputs('Incident')?['createdTimeUtc']), '\n', 'Playbook started: ', outputs('Incident')?['playbookStartUtc'], '\n', 'Incident comment: ', actions('Comment_medium')?['status'], '\n', 'Run: ', outputs('Incident')?['runId'])",
+            "runAfter": {
+              "Comment_medium": [
+                "Succeeded",
+                "Failed"
+              ]
+            },
+            "type": "Compose"
+          },
+          "g_Notify_medium": {
+            "inputs": {
+              "body": {
+                "content": "@{outputs('Notification_medium')}",
+                "username": "ATDR Playbook"
+              },
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "method": "POST",
+              "uri": "@parameters('notifyTo')"
+            },
+            "runAfter": {
+              "Notification_medium": [
+                "Succeeded"
+              ]
+            },
+            "runtimeConfiguration": {
+              "secureData": {
+                "properties": [
+                  "inputs"
+                ]
+              }
+            },
+            "type": "Http"
+          }
+        }
+      },
+      "expression": {
+        "and": [
+          {
+            "equals": [
+              "@outputs('Incident')?['severity']",
+              "High"
+            ]
+          }
+        ]
+      },
+      "runAfter": {
+        "Is_valid": [
+          "Succeeded"
+        ]
+      },
+      "type": "If"
+    },
+    "Is_valid": {
+      "actions": {},
+      "else": {
+        "actions": {
+          "Comment_rejected": {
+            "inputs": {
+              "authentication": {
+                "audience": "https://management.azure.com/",
+                "type": "ManagedServiceIdentity"
+              },
+              "body": {
+                "properties": {
+                  "message": "<b>ATDR playbook atdr-playbook-contain: REJECTED, no action taken.</b><br>Severity: @{outputs('Validate')?['severity']} (allowed: Medium, High)<br>Protected VM lookup: HTTP @{outputs('Validate')?['vmHttpStatus']}<br>VM tags: Project=@{outputs('Validate')?['tagProject']}, Role=@{outputs('Validate')?['tagRole']} (required: Project=ATDR, Role=TestBackend)<br>Run: @{outputs('Incident')?['runId']}"
+                }
+              },
+              "method": "PUT",
+              "uri": "https://management.azure.com@{outputs('Incident')?['armId']}/comments/@{guid()}?api-version=2024-03-01"
+            },
+            "runAfter": {},
+            "type": "Http"
+          },
+          "Terminate_rejected": {
+            "inputs": {
+              "runError": {
+                "code": "Rejected",
+                "message": "Validation failed: severity=@{outputs('Validate')?['severity']}, vmHttpStatus=@{outputs('Validate')?['vmHttpStatus']}, Project=@{outputs('Validate')?['tagProject']}, Role=@{outputs('Validate')?['tagRole']}"
+              },
+              "runStatus": "Failed"
+            },
+            "runAfter": {
+              "Comment_rejected": [
+                "Succeeded",
+                "Failed"
+              ]
+            },
+            "type": "Terminate"
+          }
+        }
+      },
+      "expression": {
+        "and": [
+          {
+            "equals": [
+              "@outputs('Validate')?['severityAllowed']",
+              true
+            ]
+          },
+          {
+            "equals": [
+              "@outputs('Validate')?['vmHttpStatus']",
+              200
+            ]
+          },
+          {
+            "equals": [
+              "@outputs('Validate')?['tagProject']",
+              "ATDR"
+            ]
+          },
+          {
+            "equals": [
+              "@outputs('Validate')?['tagRole']",
+              "TestBackend"
+            ]
+          }
+        ]
+      },
+      "runAfter": {
+        "Validate": [
+          "Succeeded"
+        ]
+      },
+      "type": "If"
+    },
+    "Validate": {
+      "inputs": {
+        "severity": "@outputs('Incident')?['severity']",
+        "severityAllowed": "@contains(createArray('High', 'Medium'), outputs('Incident')?['severity'])",
+        "tagProject": "@coalesce(body('Get_VM')?['tags']?['Project'], '(missing)')",
+        "tagRole": "@coalesce(body('Get_VM')?['tags']?['Role'], '(missing)')",
+        "vmHttpStatus": "@outputs('Get_VM')?['statusCode']"
+      },
+      "runAfter": {
+        "Get_VM": [
+          "Succeeded",
+          "Failed"
+        ]
+      },
+      "type": "Compose"
+    }
+  },
+  "contentVersion": "1.0.0.0",
+  "outputs": {},
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    },
+    "isolationNsgId": {
+      "type": "String"
+    },
+    "notifyTo": {
+      "type": "SecureString"
+    },
+    "protectedVmId": {
+      "type": "String"
+    }
+  },
+  "triggers": {
+    "Microsoft_Sentinel_incident": {
+      "inputs": {
+        "body": {
+          "callback_url": "@{listCallbackUrl()}"
+        },
+        "host": {
+          "connection": {
+            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+          }
+        },
+        "path": "/incident-creation"
+      },
+      "type": "ApiConnectionWebhook"
+    }
+  }
+}

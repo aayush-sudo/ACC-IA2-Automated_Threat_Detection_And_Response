@@ -1,0 +1,63 @@
+// captured 2026-10-22T09:09:56Z
+{
+  "identityType": "SystemAssigned",
+  "location": "centralindia",
+  "name": "atdr-playbook-contain",
+  "parameterNames": [
+    "$connections",
+    "protectedVmId",
+    "isolationNsgId",
+    "notifyTo"
+  ],
+  "state": "Enabled",
+  "tags": {
+    "Project": "ATDR",
+    "Role": "ResponsePlaybook"
+  },
+  "topLevelActions": [
+    "Incident",
+    "Filter_IP_entities",
+    "Client_IP",
+    "Get_VM",
+    "Validate",
+    "Is_valid",
+    "Is_high"
+  ],
+  "trigger": [
+    "Microsoft_Sentinel_incident"
+  ]
+}
+{
+  "api": "azuresentinel",
+  "connection": "atdr-conn-sentinel",
+  "parameterValueType": "Alternative",
+  "statuses": "Ready"
+}
+// role assignments on rg-atdr held by service principals
+[
+  {
+    "principal": "b0605417-9212-4043-96e1-f20ad036ac92",
+    "role": "Microsoft Sentinel Responder",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  },
+  {
+    "principal": "b0605417-9212-4043-96e1-f20ad036ac92",
+    "role": "Network Contributor",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  },
+  {
+    "principal": "b0605417-9212-4043-96e1-f20ad036ac92",
+    "role": "Virtual Machine Contributor",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  },
+  {
+    "principal": "b0605417-9212-4043-96e1-f20ad036ac92",
+    "role": "Disk Snapshot Contributor",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  },
+  {
+    "principal": "98785600-1bb7-4fb9-b9fa-19afe2c8a360",
+    "role": "Microsoft Sentinel Automation Contributor",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  }
+]
