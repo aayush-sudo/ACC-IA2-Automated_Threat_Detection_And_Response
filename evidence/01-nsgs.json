@@ -1,0 +1,108 @@
+// captured 2026-10-22T08:59:18Z
+{
+  "attachedNics": [
+    "/subscriptions/<sub-id>/resourceGroups/RG-ATDR/providers/Microsoft.Network/networkInterfaces/ATDR-VM-BACKENDVMNIC"
+  ],
+  "attachedSubnets": null,
+  "name": "atdr-nsg-backend",
+  "rules": [
+    {
+      "access": "Allow",
+      "direction": "Inbound",
+      "dstPorts": "80",
+      "name": "Allow-HTTP-from-AppGw",
+      "priority": 100,
+      "protocol": "Tcp",
+      "src": "10.10.1.0/24"
+    },
+    {
+      "access": "Allow",
+      "direction": "Inbound",
+      "dstPorts": "*",
+      "name": "Allow-AzureLoadBalancer",
+      "priority": 110,
+      "protocol": "*",
+      "src": "AzureLoadBalancer"
+    },
+    {
+      "access": "Deny",
+      "direction": "Inbound",
+      "dstPorts": "*",
+      "name": "Deny-All-Other-Inbound",
+      "priority": 4000,
+      "protocol": "*",
+      "src": "*"
+    }
+  ],
+  "tags": {
+    "Project": "ATDR"
+  }
+}
+{
+  "attachedNics": null,
+  "attachedSubnets": [
+    "/subscriptions/<sub-id>/resourceGroups/RG-ATDR/providers/Microsoft.Network/virtualNetworks/ATDR-VNET/subnets/SNET-APPGW"
+  ],
+  "name": "atdr-nsg-appgw",
+  "rules": [
+    {
+      "access": "Allow",
+      "direction": "Inbound",
+      "dstPorts": "80",
+      "name": "Allow-HTTP-from-Internet",
+      "priority": 100,
+      "protocol": "Tcp",
+      "src": "Internet"
+    },
+    {
+      "access": "Allow",
+      "direction": "Inbound",
+      "dstPorts": "65200-65535",
+      "name": "Allow-GatewayManager",
+      "priority": 110,
+      "protocol": "Tcp",
+      "src": "GatewayManager"
+    },
+    {
+      "access": "Allow",
+      "direction": "Inbound",
+      "dstPorts": "*",
+      "name": "Allow-AzureLoadBalancer",
+      "priority": 120,
+      "protocol": "*",
+      "src": "AzureLoadBalancer"
+    }
+  ],
+  "tags": {
+    "Project": "ATDR"
+  }
+}
+{
+  "attachedNics": null,
+  "attachedSubnets": null,
+  "name": "atdr-nsg-isolation",
+  "rules": [
+    {
+      "access": "Deny",
+      "direction": "Inbound",
+      "dstPorts": "*",
+      "name": "Deny-All-Inbound",
+      "priority": 100,
+      "protocol": "*",
+      "src": "*"
+    },
+    {
+      "access": "Deny",
+      "direction": "Outbound",
+      "dstPorts": "*",
+      "name": "Deny-All-Outbound",
+      "priority": 100,
+      "protocol": "*",
+      "src": "*"
+    }
+  ],
+  "tags": {
+    "Project": "ATDR",
+    "Role": "Isolation"
+  }
+}

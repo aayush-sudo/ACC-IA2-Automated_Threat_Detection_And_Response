@@ -1,0 +1,24 @@
+// captured 2026-10-22T08:59:32Z
+{
+  "dailyQuotaGb": 1.0,
+  "location": "centralindia",
+  "name": "atdr-law",
+  "provisioningState": "Succeeded",
+  "retentionInDays": 30,
+  "sku": "PerGB2018",
+  "tags": {
+    "Project": "ATDR"
+  }
+}
+// Sentinel onboarding state:
+{
+  "value": [
+    {
+      "id": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/onboardingStates/default",
+      "name": "default",
+      "properties": {},
+      "systemData": {},
+      "type": "Microsoft.SecurityInsights/onboardingStates"
+    }
+  ]
+}

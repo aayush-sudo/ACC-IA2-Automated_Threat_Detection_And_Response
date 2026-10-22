@@ -1,0 +1,27 @@
+// captured 2026-10-22T09:00:18Z — guest teammate role assignments on rg-atdr (identities redacted: teammate-A = Person 2 / Aayush, teammate-B = third teammate)
+[
+  {
+    "principalId": "<teammate-A-object-id>",
+    "role": "Microsoft Sentinel Contributor",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  },
+  {
+    "principalId": "<teammate-B-object-id>",
+    "role": "Reader",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  },
+  {
+    "principalId": "<teammate-B-object-id>",
+    "role": "Microsoft Sentinel Reader",
+    "scope": "/subscriptions/<sub-id>/resourceGroups/rg-atdr"
+  }
+]
+// guest invitation state
+{
+  "externalUserState": "Accepted",
+  "userType": "Guest"
+}
+{
+  "externalUserState": "PendingAcceptance",
+  "userType": "Guest"
+}

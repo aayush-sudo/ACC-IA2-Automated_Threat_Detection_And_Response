@@ -1,0 +1,77 @@
+// captured 2026-10-22T08:59:14Z
+[
+  {
+    "location": "centralindia",
+    "name": "atdr-nsg-backend",
+    "tags": {
+      "Project": "ATDR"
+    },
+    "type": "Microsoft.Network/networkSecurityGroups"
+  },
+  {
+    "location": "centralindia",
+    "name": "atdr-nsg-appgw",
+    "tags": {
+      "Project": "ATDR"
+    },
+    "type": "Microsoft.Network/networkSecurityGroups"
+  },
+  {
+    "location": "centralindia",
+    "name": "atdr-nsg-isolation",
+    "tags": {
+      "Project": "ATDR",
+      "Role": "Isolation"
+    },
+    "type": "Microsoft.Network/networkSecurityGroups"
+  },
+  {
+    "location": "centralindia",
+    "name": "atdr-vnet",
+    "tags": {
+      "Project": "ATDR"
+    },
+    "type": "Microsoft.Network/virtualNetworks"
+  },
+  {
+    "location": "centralindia",
+    "name": "atdr-vm-backendVMNic",
+    "tags": {
+      "Project": "ATDR",
+      "Role": "TestBackend"
+    },
+    "type": "Microsoft.Network/networkInterfaces"
+  },
+  {
+    "location": "centralindia",
+    "name": "atdr-vm-backend",
+    "tags": {
+      "Project": "ATDR",
+      "Role": "TestBackend"
+    },
+    "type": "Microsoft.Compute/virtualMachines"
+  },
+  {
+    "location": "centralindia",
+    "name": "atdr-vm-backend_OsDisk_1_a8144fea9daf4aa4ace40b7664bd4e3b",
+    "tags": {
+      "Project": "ATDR",
+      "Role": "TestBackend"
+    },
+    "type": "Microsoft.Compute/disks"
+  },
+  {
+    "location": "centralindia",
+    "name": "atdr-law",
+    "tags": {
+      "Project": "ATDR"
+    },
+    "type": "Microsoft.OperationalInsights/workspaces"
+  },
+  {
+    "location": "centralindia",
+    "name": "SecurityInsights(atdr-law)",
+    "tags": {},
+    "type": "Microsoft.OperationsManagement/solutions"
+  }
+]

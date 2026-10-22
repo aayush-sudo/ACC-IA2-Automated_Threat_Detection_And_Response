@@ -1,0 +1,27 @@
+// captured 2026-10-22T08:59:24Z
+{
+  "id": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend",
+  "image": {
+    "exactVersion": "24.04.202610160",
+    "offer": "ubuntu-24_04-lts",
+    "publisher": "Canonical",
+    "sku": "server",
+    "version": "latest"
+  },
+  "name": "atdr-vm-backend",
+  "osDiskSku": "StandardSSD_LRS",
+  "powerState": "VM running",
+  "privateIps": "10.10.2.4",
+  "publicIps": "",
+  "size": "Standard_B2ats_v2",
+  "tags": {
+    "Project": "ATDR",
+    "Role": "TestBackend"
+  }
+}
+{
+  "nic": "atdr-vm-backendVMNic",
+  "nsg": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Network/networkSecurityGroups/atdr-nsg-backend",
+  "privateIp": "10.10.2.4",
+  "publicIp": null
+}

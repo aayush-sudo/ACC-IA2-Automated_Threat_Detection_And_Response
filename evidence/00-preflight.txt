@@ -1,0 +1,48 @@
+# Phase 0 pre-flight — captured 2026-10-22T08:37:39Z
+
+## az account show (filtered)
+{
+  "id": "<sub-id>",
+  "isDefault": true,
+  "name": "Azure for Students",
+  "state": "Enabled",
+  "tenantId": "<tenant-id>"
+}
+
+## Allowed locations policy
+[
+  {
+    "allowed": [
+      "centralindia",
+      "austriaeast",
+      "eastasia",
+      "uaenorth",
+      "koreacentral"
+    ],
+    "name": "Allowed resource deployment regions"
+  }
+]
+
+## Chosen region: centralindia
+
+## VM size availability in centralindia (Standard_B1s not offered; restrictions [] = available)
+[
+  {
+    "name": "Standard_B2ats_v2",
+    "restrictions": []
+  }
+]
+
+## Existing Log Analytics workspaces / Sentinel solutions in subscription (empty = Sentinel never enabled here)
+[]
+[]
+
+## Resource provider registration
+Microsoft.Network: Registered
+Microsoft.Compute: Registered
+Microsoft.OperationalInsights: Registered
+Microsoft.SecurityInsights: Registered
+Microsoft.OperationsManagement: Registered
+Microsoft.Logic: Registered
+Microsoft.Web: Registered
+Microsoft.Insights: Registered

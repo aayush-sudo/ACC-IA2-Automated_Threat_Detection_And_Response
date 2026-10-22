@@ -1,0 +1,21 @@
+// captured 2026-10-22T08:59:17Z
+{
+  "addressSpace": [
+    "10.10.0.0/16"
+  ],
+  "name": "atdr-vnet",
+  "subnets": [
+    {
+      "defaultOutboundAccess": null,
+      "name": "snet-appgw",
+      "nsg": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Network/networkSecurityGroups/atdr-nsg-appgw",
+      "prefix": "10.10.1.0/24"
+    },
+    {
+      "defaultOutboundAccess": true,
+      "name": "snet-backend",
+      "nsg": null,
+      "prefix": "10.10.2.0/24"
+    }
+  ]
+}
