@@ -1,0 +1,12 @@
+[2026-10-23T16:57:33.102Z] ATDR WAF tests against http://<appgw-public-ip> (results file: evidence/04-waf-tests-run1.txt)
+[2026-10-23T16:57:33.294Z] PASS T1   normal page GET / -> HTTP 200 (expected 200)
+[2026-10-23T16:57:33.511Z] PASS T2   health check GET /health -> HTTP 200 (expected 200)
+[2026-10-23T16:57:33.545Z] PASS T3   SQL-injection-style search "' OR 1=1--" -> HTTP 403 (expected 403)
+[2026-10-23T16:57:33.568Z] PASS T4   XSS-style search "<script>alert('xss')</script>" -> HTTP 403 (expected 403)
+[2026-10-23T16:57:33.568Z] INFO T5   sending 30 normal requests (GET /products?search=lock) as fast as possible
+[2026-10-23T16:57:34.562Z] INFO T5   statuses in order: 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 403 200 403 200 403 200 403 200
+[2026-10-23T16:57:34.562Z] INFO T5   30 requests in 1.0s; 200s=26 403s=4 first 403 at burst request #23
+[2026-10-23T16:57:34.562Z] FAIL T5   burst: early requests 200, later requests 403 from RateLimitDemo
+[2026-10-23T16:57:34.562Z] INFO T6   waiting 70s for the rate-limit window to pass
+[2026-10-23T16:58:44.616Z] PASS T6   normal page again after the burst GET / -> HTTP 200 (expected 200)
+[2026-10-23T16:58:44.616Z] SUMMARY 5/6 passed: T1=PASS, T2=PASS, T3=PASS, T4=PASS, T5=FAIL, T6=PASS

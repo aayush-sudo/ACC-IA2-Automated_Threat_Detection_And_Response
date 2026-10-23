@@ -1,0 +1,96 @@
+// captured 2026-10-23T16:56:57Z
+// gateway
+{
+  "autoscale": {
+    "maxCapacity": 2,
+    "minCapacity": 0
+  },
+  "backendPool": [
+    [
+      {
+        "ipAddress": "10.10.2.4"
+      }
+    ]
+  ],
+  "httpSettings": [
+    {
+      "name": "appGatewayBackendHttpSettings",
+      "port": 80,
+      "probe": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Network/applicationGateways/atdr-appgw/probes/atdr-probe-health",
+      "protocol": "Http"
+    }
+  ],
+  "listeners": [
+    {
+      "name": "appGatewayHttpListener",
+      "protocol": "Http"
+    }
+  ],
+  "name": "atdr-appgw",
+  "operationalState": "Running",
+  "probes": [
+    {
+      "host": "10.10.2.4",
+      "interval": 30,
+      "name": "atdr-probe-health",
+      "path": "/health"
+    }
+  ],
+  "provisioningState": "Succeeded",
+  "rules": [
+    {
+      "name": "rule1",
+      "priority": 100,
+      "type": "Basic"
+    }
+  ],
+  "sku": {
+    "family": "Generation_1",
+    "name": "WAF_v2",
+    "tier": "WAF_v2"
+  },
+  "tags": {
+    "Project": "ATDR"
+  },
+  "wafPolicy": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies/atdr-wafpolicy"
+}
+// public IP
+{
+  "allocation": "Static",
+  "ipAddress": "<appgw-public-ip>",
+  "name": "atdr-pip-appgw",
+  "sku": "Standard",
+  "tags": {
+    "Project": "ATDR"
+  }
+}
+// backend health
+[
+  {
+    "address": "10.10.2.4",
+    "health": "Healthy",
+    "log": "Success. Received 200 status code"
+  }
+]
+// diagnostic setting
+[
+  {
+    "destinationType": "Dedicated",
+    "logs": [
+      {
+        "category": "ApplicationGatewayAccessLog",
+        "enabled": true
+      },
+      {
+        "category": "ApplicationGatewayFirewallLog",
+        "enabled": true
+      },
+      {
+        "category": "ApplicationGatewayPerformanceLog",
+        "enabled": false
+      }
+    ],
+    "name": "atdr-diag-appgw",
+    "workspace": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law"
+  }
+]
