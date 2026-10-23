@@ -1,0 +1,63 @@
+// captured 2026-10-23T16:31:06Z — atdr-wafpolicy (standalone; no gateway attached)
+{
+  "attachedGateways": null,
+  "customRules": [
+    {
+      "action": "Block",
+      "groupByUserSession": [
+        {
+          "groupByVariables": [
+            {
+              "variableName": "ClientAddr"
+            }
+          ]
+        }
+      ],
+      "matchConditions": [
+        {
+          "matchValues": [
+            "/"
+          ],
+          "matchVariables": [
+            {
+              "variableName": "RequestUri"
+            }
+          ],
+          "negationConditon": false,
+          "operator": "BeginsWith",
+          "transforms": []
+        }
+      ],
+      "name": "RateLimitDemo",
+      "priority": 10,
+      "rateLimitDuration": "OneMin",
+      "rateLimitThreshold": 20,
+      "ruleType": "RateLimitRule",
+      "state": "Enabled"
+    }
+  ],
+  "location": "centralindia",
+  "managedRuleSets": [
+    {
+      "overrides": [],
+      "type": "Microsoft_DefaultRuleSet",
+      "version": "2.1"
+    }
+  ],
+  "name": "atdr-wafpolicy",
+  "policySettings": {
+    "fileUploadEnforcement": true,
+    "fileUploadLimitInMb": 100,
+    "maxRequestBodySizeInKb": 128,
+    "mode": "Prevention",
+    "requestBodyCheck": true,
+    "requestBodyEnforcement": true,
+    "requestBodyInspectLimitInKB": 128,
+    "state": "Enabled"
+  },
+  "provisioningState": "Succeeded",
+  "resourceState": null,
+  "tags": {
+    "Project": "ATDR"
+  }
+}
