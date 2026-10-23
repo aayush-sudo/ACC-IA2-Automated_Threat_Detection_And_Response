@@ -6,12 +6,12 @@ Standard library only (Python 3.8+), so it runs on any Windows/Mac/Linux laptop:
     python waf_tests.py http://<gateway-public-ip>/          (Windows)
     python3 waf_tests.py http://<gateway-public-ip>/         (macOS / Linux)
 
-Sends about 40 requests in total, using standard, documented WAF test strings:
+Sends about 60 requests in total, using standard, documented WAF test strings:
   T1  GET /                                   -> expect 200
   T2  GET /health                             -> expect 200
   T3  SQL-injection-style search  ' OR 1=1--  -> expect 403 (managed rules)
   T4  XSS-style search  <script>alert('xss')</script> -> expect 403 (managed rules)
-  T5  burst of 30 normal requests in < 1 min  -> later requests 403 (RateLimitDemo)
+  T5  burst of 50 normal requests in < 1 min  -> later requests 403 (RateLimitDemo)
   T6  wait for the rate-limit window to pass, GET / again -> expect 200
 
 Every step prints a PASS/FAIL line with a UTC timestamp; everything is also written
@@ -29,7 +29,7 @@ from datetime import datetime, timezone
 USER_AGENT = "ATDR-waf-tests/1.0 (college project; own gateway only)"
 SQLI = "' OR 1=1--"
 XSS = "<script>alert('xss')</script>"
-BURST = 30
+BURST = 50
 RATE_WINDOW_SECONDS = 60
 
 
@@ -39,6 +39,8 @@ def t5_verdict(statuses, elapsed):
     The gateway runs more than one instance and each keeps its own rate-limit count, so
     once blocking starts the 403s can alternate with 200s (observed 2026-10-23: all
     blocks on instance appgw_0). Requiring every later request to be 403 would be wrong.
+    The burst is 50 because 30 was split 15/15 over the two instances and sometimes
+    produced no block at all (autoscale cannot go below 2 instances).
     """
     first_block = next((i + 1 for i, s in enumerate(statuses) if s == 403), None)
     ok = (first_block is not None and first_block > 10

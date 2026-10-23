@@ -1,0 +1,88 @@
+# Phase 6 — E2E run 1 (report collected 2026-10-23T22:09:07Z); IPs masked, IDs sanitised
+# Live log of the run: see 'Run log' at the end
+
+## Timeline
+T0 attack start          2026-10-23T21:32:44Z
+attack end               2026-10-23T21:32:46Z
+incident #4 created   2026-10-23T21:38:26.09Z  (High, rule repeated-blocks)
+incident #3 created   2026-10-23T21:38:13.1833333Z  (Medium, rule rate-limit)
+playbook run start       2026-10-23T21:38:24.9059708Z  (run 08584088153805761044627733977CU27)
+playbook run end         2026-10-23T21:38:32.6068154Z  (Succeeded)
+playbook run start       2026-10-23T21:38:36.0986001Z  (run 08584088153693836600439652099CU06)
+playbook run end         2026-10-23T21:38:46.3831387Z  (Succeeded)
+isolation verified       2026-10-23T21:38:57Z  (poll: VM tag SecurityStatus=Quarantined and NIC on atdr-nsg-isolation)
+first 502 via gateway    2026-10-23T21:42:31Z
+backend Unhealthy        2026-10-23T21:42:44Z
+
+## Incidents since T0 (Defender sync: providerName / providerIncidentId / incidentUrl)
+#4 ATDR – Repeated WAF blocks from <tester-ip> | High | status New | provider Microsoft XDR | providerIncidentId 2 | alerts 1
+   url https://portal.azure.com/#asset/Microsoft_Azure_Security_Insights/Incident/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/Incidents/3c989431-bf7a-4b8f-a7a5-00cd8d32a38b
+   entities:
+      Ip <tester-ip>
+      AzureResource /subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend
+   comments:
+      2026-10-23T21:38:43.206321Z <b>ATDR playbook atdr-playbook-contain: HIGH severity containment</b><br>Incident #4: ATDR – Repeated WAF blocks from <tester-ip><br>Client IP: <tester-ip><br>Protected VM: atdr-vm-backend (from playbook parameter, not from the alert)<br>Containment scope result: Succeeded<br>Steps:<br>Get_NIC: Succeeded at 2026-10-23T21:38:36.7399907Z<br>Original_NSG: Succeeded at 2026-10-23T21:38:36.7616
+#3 ATDR – WAF rate limit triggered by <tester-ip> | Medium | status New | provider Microsoft XDR | providerIncidentId 1 | alerts 1
+   url https://portal.azure.com/#asset/Microsoft_Azure_Security_Insights/Incident/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/Incidents/75223008-3674-427b-a3b1-ffa41066cdf5
+   entities:
+      Ip <tester-ip>
+      AzureResource /subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend
+   comments:
+      2026-10-23T21:38:28.2896054Z <b>ATDR playbook atdr-playbook-contain: MEDIUM severity, notify only</b><br>Incident #3: ATDR – WAF rate limit triggered by <tester-ip><br>Client IP: <tester-ip><br>No containment performed (policy: only High severity isolates the backend). Team notified.<br>Run: 08584088153805761044627733977CU27
+
+## Playbook runs since T0 (which incident each run handled, key action times)
+run 08584088153693836600439652099CU06  2026-10-23T21:38:36.0986001Z -> 2026-10-23T21:38:46.3831387Z  Succeeded
+   trigger: objectEventType Create | incident #4 | severity High
+   b_Snapshot_OS_disk   2026-10-23T21:38:37.2016087Z -> 2026-10-23T21:38:40.3576206Z  Succeeded
+   c_Isolate_NIC        2026-10-23T21:38:40.4301445Z -> 2026-10-23T21:38:40.7228359Z  Succeeded
+   e_Verify_NIC         2026-10-23T21:38:41.0953367Z -> 2026-10-23T21:38:41.1565094Z  Succeeded
+   e_Verify_snapshot    2026-10-23T21:38:41.17937Z -> 2026-10-23T21:38:41.354958Z  Succeeded
+   Comment_high         2026-10-23T21:38:41.7324119Z -> 2026-10-23T21:38:45.5005421Z  Succeeded
+   g_Notify_high        2026-10-23T21:38:45.5615075Z -> 2026-10-23T21:38:46.0706025Z  Succeeded
+run 08584088153805761044627733977CU27  2026-10-23T21:38:24.9059708Z -> 2026-10-23T21:38:32.6068154Z  Succeeded
+   trigger: objectEventType Create | incident #3 | severity Medium
+   Comment_medium       2026-10-23T21:38:26.605629Z -> 2026-10-23T21:38:31.8674182Z  Succeeded
+   g_Notify_medium      2026-10-23T21:38:31.9245408Z -> 2026-10-23T21:38:32.5572159Z  Succeeded
+
+## Who started the playbook
+Proof that the automation rule (not a person) started each run:
+ - this script never calls runPlaybook or the Logic App trigger; it only switches the automation rule on/off;
+ - each run's trigger data (Microsoft_Sentinel_incident, objectEventType Create) names the incident it handled,
+   and each run started ~10-12 s after that incident was created (timeline above).
+Not used: the SentinelHealth table (health diagnostic setting atdr-sentinel-health enabled 2026-10-23T21:28Z)
+stayed empty, and the Activity Log does not record runPlaybook calls.
+
+## Run log
+[2026-10-23T21:32:16Z] E2E run 1 against our gateway <appgw-public-ip>; VM atdr-vm-backend
+[2026-10-23T21:32:37Z] pre-flight: VM tags clean, NIC on atdr-nsg-backend, GET / -> 200, backend health Healthy
+[2026-10-23T21:32:44Z] ATDR automation rule enabled=true
+[2026-10-23T21:32:44Z] T0 attack start
+[2026-10-23T21:32:44.908Z] attack search="' OR 1=1--" -> HTTP 403
+[2026-10-23T21:32:44.994Z] attack search="1' UNION SELECT username, password FROM users--" -> HTTP 403
+[2026-10-23T21:32:45.113Z] attack search="<script>alert('xss')</script>" -> HTTP 403
+[2026-10-23T21:32:45.149Z] attack search='<img src=x onerror=alert(1)>' -> HTTP 403
+[2026-10-23T21:32:45.180Z] attack search='<svg/onload=alert(1)>' -> HTTP 403
+[2026-10-23T21:32:46.538Z] burst of 50 in 1.3s: 200s=33 403s=17 first 403 at #34
+[2026-10-23T21:32:46.538Z] burst statuses: 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 403 403 403 403 403 403 403 403 403 403 403 403 403 403 403 403 403
+[2026-10-23T21:32:46Z] attack end; now waiting for Sentinel (logs ~4 min + rule schedule 5 min)
+[2026-10-23T21:38:33Z] incidents since T0:
+    #3|2026-10-23T21:38:13.1833333Z|Medium|rate-limit|75223008-3674-427b-a3b1-ffa41066cdf5|ATDR – WAF rate limit triggered by <tester-ip>
+[2026-10-23T21:38:33Z] playbook runs since T0:
+    08584088153805761044627733977CU27|2026-10-23T21:38:24.9059708Z|2026-10-23T21:38:32.6068154Z|Succeeded
+[2026-10-23T21:38:54Z] incidents since T0:
+    #4|2026-10-23T21:38:26.09Z|High|repeated-blocks|3c989431-bf7a-4b8f-a7a5-00cd8d32a38b|ATDR – Repeated WAF blocks from <tester-ip>
+    #3|2026-10-23T21:38:13.1833333Z|Medium|rate-limit|75223008-3674-427b-a3b1-ffa41066cdf5|ATDR – WAF rate limit triggered by <tester-ip>
+[2026-10-23T21:38:54Z] playbook runs since T0:
+    08584088153693836600439652099CU06|2026-10-23T21:38:36.0986001Z|2026-10-23T21:38:46.3831387Z|Succeeded
+    08584088153805761044627733977CU27|2026-10-23T21:38:24.9059708Z|2026-10-23T21:38:32.6068154Z|Succeeded
+[2026-10-23T21:38:57Z] ISOLATION VERIFIED: SecurityStatus=Quarantined IncidentNumber=4 NIC NSG=atdr-nsg-isolation
+[2026-10-23T21:39:37Z] GET / via gateway -> 000
+[2026-10-23T21:39:51Z] backend health -> Healthy
+[2026-10-23T21:40:49Z] GET / via gateway -> 000
+[2026-10-23T21:41:02Z] backend health -> Healthy
+[2026-10-23T21:42:00Z] GET / via gateway -> 000
+[2026-10-23T21:42:13Z] backend health -> Healthy
+[2026-10-23T21:42:31Z] GET / via gateway -> 502
+[2026-10-23T21:42:44Z] backend health -> Unhealthy
+[2026-10-23T21:42:44Z] all checks done
+[2026-10-23T21:43:27Z] ATDR automation rule enabled=false

@@ -1,0 +1,45 @@
+# Phase 6 — E2E run 2 (report collected 2026-10-23T22:43:11Z); IPs masked, IDs sanitised
+# Live log of the run: see 'Run log' at the end
+
+## Timeline
+T0 attack start          2026-10-23T22:12:04Z
+attack end               2026-10-23T22:12:06Z
+isolation verified       not seen  (poll: VM tag SecurityStatus=Quarantined and NIC on atdr-nsg-isolation)
+first 502 via gateway    not seen
+backend Unhealthy        not seen
+
+## Incidents since T0 (Defender sync: providerName / providerIncidentId / incidentUrl)
+
+## Playbook runs since T0 (which incident each run handled, key action times)
+
+## Who started the playbook
+Proof that the automation rule (not a person) started each run:
+ - this script never calls runPlaybook or the Logic App trigger; it only switches the automation rule on/off;
+ - each run's trigger data (Microsoft_Sentinel_incident, objectEventType Create) names the incident it handled,
+   and each run started ~10-12 s after that incident was created (timeline above).
+Not used: the SentinelHealth table (health diagnostic setting atdr-sentinel-health enabled 2026-10-23T21:28Z)
+stayed empty, and the Activity Log does not record runPlaybook calls.
+
+## Run log
+[2026-10-23T22:11:29Z] E2E run 2 against our gateway <appgw-public-ip>; VM atdr-vm-backend
+[2026-10-23T22:11:54Z] pre-flight: VM tags clean, NIC on atdr-nsg-backend, GET / -> 200, backend health Healthy
+[2026-10-23T22:12:04Z] ATDR automation rule enabled=true
+[2026-10-23T22:12:04Z] T0 attack start
+[2026-10-23T22:12:04.978Z] attack search="' OR 1=1--" -> HTTP 403
+[2026-10-23T22:12:05.079Z] attack search="1' UNION SELECT username, password FROM users--" -> HTTP 403
+[2026-10-23T22:12:05.121Z] attack search="<script>alert('xss')</script>" -> HTTP 403
+[2026-10-23T22:12:05.160Z] attack search='<img src=x onerror=alert(1)>' -> HTTP 403
+[2026-10-23T22:12:05.229Z] attack search='<svg/onload=alert(1)>' -> HTTP 403
+[2026-10-23T22:12:06.705Z] burst of 50 in 1.4s: 200s=35 403s=15 first 403 at #36
+[2026-10-23T22:12:06.706Z] burst statuses: 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 403 403 403 403 403 403 403 403 403 403 403 403 403 403 403
+[2026-10-23T22:12:06Z] attack end; now waiting for Sentinel (logs ~4 min + rule schedule 5 min)
+[2026-10-23T22:43:07Z] STOPPED by operator: no new incident; run 2 alerts were grouped into open incidents #3/#4 from run 1 (alertsCount 1 -> 2 at 22:18:29Z)
+TimeGenerated                 IncidentNumber  Status  alerts  ProviderIncidentId
+----------------------------  --------------  ------  ------  ------------------
+2026-10-23T21:38:13.1833333Z  3               New     1       1                 
+2026-10-23T21:38:26.09Z       4               New     1       2                 
+2026-10-23T21:38:30.4901396Z  3               New     1       1                 
+2026-10-23T21:38:44.9581905Z  4               New     1       2                 
+2026-10-23T22:18:29.6148371Z  3               New     2       1                 
+2026-10-23T22:18:29.6169777Z  4               New     2       2                 
+(6 rows)

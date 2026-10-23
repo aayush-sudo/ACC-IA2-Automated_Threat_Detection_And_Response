@@ -1,0 +1,12 @@
+# Phase 6 — rollback after E2E run 1 (bash response/rollback.sh --delete-snapshot), then site/backend check
+[2026-10-23T22:09:53Z] VM atdr-vm-backend: SecurityStatus='Quarantined' IncidentNumber='4' QuarantinedAt='2026-10-23T21:38:40.8085361Z'
+[2026-10-23T22:09:53Z] NIC NSG now:      atdr-nsg-isolation
+[2026-10-23T22:09:54Z] OriginalNsg tag:  atdr-nsg-backend
+[2026-10-23T22:09:54Z] Re-attaching atdr-nsg-backend to atdr-vm-backendVMNic
+[2026-10-23T22:09:58Z] Removing quarantine tags in one call: SecurityStatus IncidentNumber QuarantinedAt OriginalNsg
+[2026-10-23T22:10:02Z] Deleting snapshot atdr-snap-4
+[2026-10-23T22:10:34Z] Verify
+  NIC NSG:  atdr-nsg-backend
+  VM tags:  {"Project":"ATDR","Role":"TestBackend"}
+  Snapshots in rg-atdr: 
+[2026-10-23T22:11:07Z] GET / -> 200  backend -> Healthy

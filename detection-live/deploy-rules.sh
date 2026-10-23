@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # Phase 5 — create/update (idempotent PUT) the two Sentinel analytics rules on atdr-law and the
 # automation rule that runs atdr-playbook-contain on every incident they create.
-# Rule IDs are fixed so re-running updates the same rules. Usage: bash detection-live/deploy-rules.sh
+# Rule IDs are fixed (rule-ids.sh) so re-running updates the same rules. Usage: bash detection-live/deploy-rules.sh
 set -euo pipefail
 source "$(dirname "$0")/../infra/common.sh"
 HERE="$(dirname "$0")"
 
+source "$HERE/rule-ids.sh"
+
 API="2024-03-01"
 PLAYBOOK="atdr-playbook-contain"
-RULE_BLOCKS_ID="61f2546c-043a-4cd5-912f-e3e354c6b45a"
-RULE_RATE_ID="f28693aa-8349-4ff4-a6d1-77040f2faaf8"
-AUTOMATION_ID="4f5cb1ad-17ee-441b-94e7-b3358131d28b"
-
-SI="/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.OperationalInsights/workspaces/$LAW/providers/Microsoft.SecurityInsights"
+# The automation rule is created DISABLED unless AUTOMATION_ENABLED=true: between sessions it stays off
+# (detection-live/automation-rule.sh on|off), and tests/e2e_run.sh switches it on for a run.
+AUTOMATION_ENABLED="${AUTOMATION_ENABLED:-false}"
 VM_ID="$(az vm show -g "$RG" -n "$VM_NAME" --query id -o tsv | tr -d '\r')"
 PLAYBOOK_ID="$(az resource show -g "$RG" -n "$PLAYBOOK" --resource-type Microsoft.Logic/workflows --query id -o tsv | tr -d '\r')"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
@@ -62,13 +62,13 @@ rule_body waf-rate-limit.kql "ATDR – WAF rate limit triggered" Medium \
 put "$SI/alertRules/$RULE_RATE_ID" "$TMP/rate.json"
 
 echo "[$(utc_now)] Automation rule: run $PLAYBOOK when either rule creates an incident"
-RULE_IDS="$SI/alertRules/$RULE_BLOCKS_ID,$SI/alertRules/$RULE_RATE_ID" PLAYBOOK_ID="$PLAYBOOK_ID" TENANT_ID="$TENANT_ID" \
+RULE_IDS="$SI/alertRules/$RULE_BLOCKS_ID,$SI/alertRules/$RULE_RATE_ID" PLAYBOOK_ID="$PLAYBOOK_ID" TENANT_ID="$TENANT_ID" ENABLED="$AUTOMATION_ENABLED" \
 python -c '
 import json, os, sys
 e = os.environ
 json.dump({"properties": {
     "displayName": "ATDR – Run containment playbook on ATDR incidents", "order": 1,
-    "triggeringLogic": {"isEnabled": True, "triggersOn": "Incidents", "triggersWhen": "Created",
+    "triggeringLogic": {"isEnabled": e["ENABLED"] == "true", "triggersOn": "Incidents", "triggersWhen": "Created",
         "conditions": [{"conditionType": "Property", "conditionProperties": {
             "propertyName": "IncidentRelatedAnalyticRuleIds", "operator": "Contains",
             "propertyValues": e["RULE_IDS"].split(",")}}]},
@@ -77,4 +77,12 @@ json.dump({"properties": {
 ' "$(winpath "$TMP/automation.json")"
 put "$SI/automationRules/$AUTOMATION_ID" "$TMP/automation.json"
 
+echo "[$(utc_now)] Sentinel health monitoring (SentinelHealth table): analytics and automation rule runs"
+# Records every automation-rule run and the playbook it started: proof that a run came from the rule.
+LAW_ID="$(az monitor log-analytics workspace show -g "$RG" -n "$LAW" --query id -o tsv | tr -d '\r')"
+az monitor diagnostic-settings create -n atdr-sentinel-health \
+  --resource "$LAW_ID/providers/Microsoft.SecurityInsights/settings/SentinelHealth" --workspace "$LAW_ID" \
+  --logs '[{"category":"Analytics","enabled":true},{"category":"Automation","enabled":true}]' -o none
+
+bash "$HERE/automation-rule.sh" status
 echo "[$(utc_now)] Done."
