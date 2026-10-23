@@ -1,0 +1,39 @@
+# Phase 5 — live detection queries run manually against atdr-law at 2026-10-23T20:45:59Z
+
+## waf-repeated-blocks.kql — as the analytics rule runs it (last 15 minutes)
+(no rows)
+
+## waf-repeated-blocks.kql — replayed over the last 24 h in 15-minute windows (rows = windows that would alert)
+window15m             TimeGenerated         ClientIp     blockedEvents  blockedTransactions  ruleIds                     firstSeen             lastSeen              VmResourceId                                                
+--------------------  --------------------  -----------  -------------  -------------------  --------------------------  --------------------  --------------------  ------------------------------------------------------------
+2026-10-23T16:45:00Z  2026-10-23T16:57:34Z  <tester-ip>  6              6                    ["949110","RateLimitDemo"]  2026-10-23T16:57:33Z  2026-10-23T16:57:34Z  /subscriptions/<sub-id>/resource
+2026-10-23T19:15:00Z  2026-10-23T19:29:26Z  94.154.x.x   5              5                    ["949110"]                  2026-10-23T19:21:46Z  2026-10-23T19:29:26Z  /subscriptions/<sub-id>/resource
+2026-10-23T20:15:00Z  2026-10-23T20:21:46Z  172.232.x.x  231            231                  ["949110","RateLimitDemo"]  2026-10-23T20:21:05Z  2026-10-23T20:21:46Z  /subscriptions/<sub-id>/resource
+(3 rows)
+
+## waf-rate-limit.kql — as the analytics rule runs it (last 15 minutes)
+(no rows)
+
+## waf-rate-limit.kql — replayed over the last 24 h in 15-minute windows (rows = windows that would alert)
+window15m             TimeGenerated         ClientIp     RuleId         blockedEvents  blockedTransactions  firstSeen             lastSeen              VmResourceId                                                
+--------------------  --------------------  -----------  -------------  -------------  -------------------  --------------------  --------------------  ------------------------------------------------------------
+2026-10-23T16:45:00Z  2026-10-23T16:57:34Z  <tester-ip>  RateLimitDemo  4              4                    2026-10-23T16:57:34Z  2026-10-23T16:57:34Z  /subscriptions/<sub-id>/resource
+2026-10-23T20:15:00Z  2026-10-23T20:21:46Z  172.232.x.x  RateLimitDemo  226            226                  2026-10-23T20:21:21Z  2026-10-23T20:21:46Z  /subscriptions/<sub-id>/resource
+(2 rows)
+
+## RateLimitDemo blocks per client per minute (blocks produced by one burst)
+minute                ClientIp     InstanceId  rateLimitBlocks
+--------------------  -----------  ----------  ---------------
+2026-10-23T16:57:00Z  <tester-ip>  appgw_0     4              
+2026-10-23T20:21:00Z  172.232.x.x  appgw_1     121            
+2026-10-23T20:21:00Z  172.232.x.x  appgw_0     105            
+(3 rows)
+
+## T5 bursts from our test laptop (T5 burst requests and their 403s per minute)
+minute                ClientIp     InstanceId  requests  http403
+--------------------  -----------  ----------  --------  -------
+2026-10-23T16:57:00Z  <tester-ip>  appgw_0     15        4      
+2026-10-23T16:57:00Z  <tester-ip>  appgw_1     15        0      
+2026-10-23T20:40:00Z  <tester-ip>  appgw_0     15        0      
+2026-10-23T20:40:00Z  <tester-ip>  appgw_1     15        0      
+(4 rows)

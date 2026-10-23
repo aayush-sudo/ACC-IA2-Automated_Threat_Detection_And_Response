@@ -1,0 +1,19 @@
+# Phase 4 follow-up — attempt to limit atdr-appgw to one instance (autoscale max 1, min 0)
+# Run 2026-10-23T20:39:20Z with: az network application-gateway update -g rg-atdr -n atdr-appgw --set autoscaleConfiguration.maxCapacity=1
+
+Result: rejected by Azure, nothing changed:
+  (ApplicationGatewayInvalidCapacityInAutoscaleConfiguration) Application Gateway .../applicationGateways/atdr-appgw
+  does not have valid MaxCapacity value for AutoscaleConfiguration. Valid value is in the range of [2-125].
+
+Gateway state re-read at 2026-10-23T20:43:11Z:
+{
+  "autoscale": {
+    "maxCapacity": 2,
+    "minCapacity": 0
+  },
+  "operationalState": "Running",
+  "provisioningState": "Succeeded"
+}
+
+Conclusion: with autoscale, a WAF_v2 gateway cannot be capped below 2 instances, so the rate limit stays
+counted per instance. infra/04-appgw-create.sh keeps --min-capacity 0 --max-capacity 2.

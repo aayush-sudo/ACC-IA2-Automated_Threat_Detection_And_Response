@@ -1,0 +1,36 @@
+// LIVE version of sentinel-rules/queries/waf-rate-limit.kql (Aayush, Person 2).
+// Analytics rule "ATDR – WAF rate limit triggered": Medium, every 5 min, lookback 15 min.
+// Changes from the original (checked against atdr-law, 2026-10-23):
+//  - RateLimitRuleId placeholder replaced by the confirmed value "RateLimitDemo"
+//    (RuleSetType "Custom", Action "Blocked" in AGWFirewallLogs).
+//  - Window 10 min -> 15 min, to match the rule's lookback ("same schedule" as the High rule).
+//  - Threshold 10 -> 3 distinct blocked transactions. Measured: the 30-request T5 burst produced
+//    4 RateLimitDemo blocks in run 1 (16:57 UTC) and 0 in the rerun (20:40 UTC). The gateway runs two
+//    instances that each count the 20/min limit separately, so one burst from one client yields only a
+//    few blocks; 10 would never fire for our test traffic. 3 still ignores a single stray 403.
+//    (A real internet scanner on 2026-10-23 20:21 UTC produced 231 blocks and passes either threshold.)
+//  - Added VmResourceId for the AzureResource entity mapping (replaced at deploy time).
+let RateLimitRuleId = "RateLimitDemo";
+AGWFirewallLogs
+| where TimeGenerated > ago(15m)
+| where RuleId == RateLimitRuleId
+| where Action =~ "Blocked"
+| where isnotempty(ClientIp) and isnotempty(TransactionId)
+| summarize
+    blockedEvents = count(),
+    blockedTransactions = dcount(TransactionId),
+    sampleUris = make_set(RequestUri, 5),
+    firstSeen = min(TimeGenerated),
+    lastSeen = max(TimeGenerated)
+    by ClientIp, RuleId
+| where blockedTransactions >= 3
+| project
+    TimeGenerated = lastSeen,
+    ClientIp,
+    RuleId,
+    blockedEvents,
+    blockedTransactions,
+    sampleUris,
+    firstSeen,
+    lastSeen
+| extend VmResourceId = "__PROTECTED_VM_ID__"

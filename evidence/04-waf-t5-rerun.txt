@@ -1,0 +1,20 @@
+[2026-10-23T20:40:04.026Z] ATDR T5-only rerun against http://<appgw-public-ip> (autoscale unchanged 0-2: Azure rejected max 1)
+[2026-10-23T20:40:04.026Z] INFO T5   sending 30 normal requests (GET /products?search=lock) as fast as possible
+[2026-10-23T20:40:05.144Z] INFO T5   statuses in order: 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200
+[2026-10-23T20:40:05.144Z] INFO T5   30 requests in 1.1s; 200s=30 403s=0 first 403 at burst request #None
+[2026-10-23T20:40:05.146Z] INFO T5   strict check (every request after the first 403 is also 403): FAIL
+[2026-10-23T20:40:05.147Z] FAIL T5   burst: first 10 requests 200, later requests 403 from RateLimitDemo
+[2026-10-23T20:40:05.147Z] SUMMARY 0/1 passed: T5=FAIL
+
+# Access log for this burst (queried after ~4 min ingestion delay): requests per gateway instance
+InstanceId  HttpStatus  n 
+----------  ----------  --
+appgw_0     200         15
+appgw_1     200         15
+(2 rows)
+
+# Interpretation: the 30 requests were split 15/15 round-robin; each instance counts separately against
+# RateLimitDemo's 20 per minute, so neither instance blocked. Run 1 (16:57 UTC) blocked 4 requests on appgw_0
+# from its 14th request that minute, i.e. the per-instance count is approximate. A 30-request burst is
+# therefore borderline on a 2-instance gateway: 4 blocks in run 1, 0 blocks here.
+# Strict check (all requests after the first 403 are 403) cannot be restored: single instance is not possible.

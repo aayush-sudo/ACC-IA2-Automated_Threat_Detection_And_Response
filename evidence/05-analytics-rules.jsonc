@@ -1,0 +1,149 @@
+// Phase 5 — analytics rules as stored in Sentinel (GET api-version 2024-03-01, 2026-10-23T20:48:37Z); createdBy/lastModifiedBy removed
+{
+  "analyticsRules": [
+    {
+      "id": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/alertRules/61f2546c-043a-4cd5-912f-e3e354c6b45a",
+      "kind": "Scheduled",
+      "name": "61f2546c-043a-4cd5-912f-e3e354c6b45a",
+      "properties": {
+        "alertDetailsOverride": {
+          "alertDisplayNameFormat": "ATDR – Repeated WAF blocks from {{ClientIp}}"
+        },
+        "alertRuleTemplateName": null,
+        "customDetails": {
+          "BlockedTransactions": "blockedTransactions"
+        },
+        "description": "Live version of sentinel-rules/queries/waf-repeated-blocks.kql: at least 5 distinct WAF-blocked transactions from one client IP in 15 minutes. The incident triggers atdr-playbook-contain, which isolates the protected backend VM.",
+        "displayName": "ATDR – Repeated WAF blocks from one client",
+        "enabled": true,
+        "entityMappings": [
+          {
+            "entityType": "IP",
+            "fieldMappings": [
+              {
+                "columnName": "ClientIp",
+                "identifier": "Address"
+              }
+            ]
+          },
+          {
+            "entityType": "AzureResource",
+            "fieldMappings": [
+              {
+                "columnName": "VmResourceId",
+                "identifier": "ResourceId"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "incidentConfiguration": {
+          "createIncident": true,
+          "groupingConfiguration": {
+            "enabled": true,
+            "groupByAlertDetails": [],
+            "groupByCustomDetails": [],
+            "groupByEntities": [
+              "IP"
+            ],
+            "lookbackDuration": "PT1H",
+            "matchingMethod": "Selected",
+            "reopenClosedIncident": false
+          }
+        },
+        "lastModifiedUtc": "2026-10-23T20:47:23.1851861Z",
+        "query": "// LIVE version of sentinel-rules/queries/waf-repeated-blocks.kql (Aayush, Person 2).\n// Analytics rule \"ATDR – Repeated WAF blocks from one client\": High, every 5 min, lookback 15 min.\n// Changes from the original (checked against atdr-law, 2026-10-23):\n//  - Window and threshold unchanged: >= 5 distinct blocked transactions from one ClientIp in 15 min.\n//    Real data: one T1-T6 run produced 6 (2 managed-rule blocks + 4 RateLimitDemo blocks).\n//  - Action =~ \"Blocked\" kept: on DRS 2.1 the individual rules log \"Matched\"; the block decision is\n//    one row per transaction (RuleId 949110 for managed rules, RateLimitDemo for the rate limit).\n//  - Added VmResourceId (the protected backend VM) for the AzureResource entity mapping.\n//    /subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend is replaced by detection-live/deploy-rules.sh at deploy time.\nAGWFirewallLogs\n| where TimeGenerated > ago(15m)\n| where Action =~ \"Blocked\"\n| where isnotempty(ClientIp) and isnotempty(TransactionId)\n| summarize\n    blockedEvents = count(),\n    blockedTransactions = dcount(TransactionId),\n    ruleIds = make_set(RuleId, 20),\n    sampleUris = make_set(RequestUri, 5),\n    firstSeen = min(TimeGenerated),\n    lastSeen = max(TimeGenerated)\n    by ClientIp\n| where blockedTransactions >= 5\n| project\n    TimeGenerated = lastSeen,\n    ClientIp,\n    blockedEvents,\n    blockedTransactions,\n    ruleIds,\n    sampleUris,\n    firstSeen,\n    lastSeen\n| extend VmResourceId = \"/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend\"",
+        "queryFrequency": "PT5M",
+        "queryPeriod": "PT15M",
+        "severity": "High",
+        "suppressionDuration": "PT15M",
+        "suppressionEnabled": true,
+        "tactics": [
+          "Reconnaissance",
+          "InitialAccess"
+        ],
+        "techniques": [
+          "T1595",
+          "T1190"
+        ],
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0
+      },
+      "type": "Microsoft.SecurityInsights/alertRules"
+    },
+    {
+      "id": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/alertRules/f28693aa-8349-4ff4-a6d1-77040f2faaf8",
+      "kind": "Scheduled",
+      "name": "f28693aa-8349-4ff4-a6d1-77040f2faaf8",
+      "properties": {
+        "alertDetailsOverride": {
+          "alertDisplayNameFormat": "ATDR – WAF rate limit triggered by {{ClientIp}}"
+        },
+        "alertRuleTemplateName": null,
+        "customDetails": {
+          "BlockedTransactions": "blockedTransactions"
+        },
+        "description": "Live version of sentinel-rules/queries/waf-rate-limit.kql: at least 3 requests from one client IP blocked by WAF custom rule RateLimitDemo in 15 minutes. Medium: the playbook comments and notifies, no containment.",
+        "displayName": "ATDR – WAF rate limit triggered",
+        "enabled": true,
+        "entityMappings": [
+          {
+            "entityType": "IP",
+            "fieldMappings": [
+              {
+                "columnName": "ClientIp",
+                "identifier": "Address"
+              }
+            ]
+          },
+          {
+            "entityType": "AzureResource",
+            "fieldMappings": [
+              {
+                "columnName": "VmResourceId",
+                "identifier": "ResourceId"
+              }
+            ]
+          }
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "AlertPerResult"
+        },
+        "incidentConfiguration": {
+          "createIncident": true,
+          "groupingConfiguration": {
+            "enabled": true,
+            "groupByAlertDetails": [],
+            "groupByCustomDetails": [],
+            "groupByEntities": [
+              "IP"
+            ],
+            "lookbackDuration": "PT1H",
+            "matchingMethod": "Selected",
+            "reopenClosedIncident": false
+          }
+        },
+        "lastModifiedUtc": "2026-10-23T20:47:28.0934031Z",
+        "query": "// LIVE version of sentinel-rules/queries/waf-rate-limit.kql (Aayush, Person 2).\n// Analytics rule \"ATDR – WAF rate limit triggered\": Medium, every 5 min, lookback 15 min.\n// Changes from the original (checked against atdr-law, 2026-10-23):\n//  - RateLimitRuleId placeholder replaced by the confirmed value \"RateLimitDemo\"\n//    (RuleSetType \"Custom\", Action \"Blocked\" in AGWFirewallLogs).\n//  - Window 10 min -> 15 min, to match the rule's lookback (\"same schedule\" as the High rule).\n//  - Threshold 10 -> 3 distinct blocked transactions. Measured: the 30-request T5 burst produced\n//    4 RateLimitDemo blocks in run 1 (16:57 UTC) and 0 in the rerun (20:40 UTC). The gateway runs two\n//    instances that each count the 20/min limit separately, so one burst from one client yields only a\n//    few blocks; 10 would never fire for our test traffic. 3 still ignores a single stray 403.\n//    (A real internet scanner on 2026-10-23 20:21 UTC produced 231 blocks and passes either threshold.)\n//  - Added VmResourceId for the AzureResource entity mapping (replaced at deploy time).\nlet RateLimitRuleId = \"RateLimitDemo\";\nAGWFirewallLogs\n| where TimeGenerated > ago(15m)\n| where RuleId == RateLimitRuleId\n| where Action =~ \"Blocked\"\n| where isnotempty(ClientIp) and isnotempty(TransactionId)\n| summarize\n    blockedEvents = count(),\n    blockedTransactions = dcount(TransactionId),\n    sampleUris = make_set(RequestUri, 5),\n    firstSeen = min(TimeGenerated),\n    lastSeen = max(TimeGenerated)\n    by ClientIp, RuleId\n| where blockedTransactions >= 3\n| project\n    TimeGenerated = lastSeen,\n    ClientIp,\n    RuleId,\n    blockedEvents,\n    blockedTransactions,\n    sampleUris,\n    firstSeen,\n    lastSeen\n| extend VmResourceId = \"/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend\"",
+        "queryFrequency": "PT5M",
+        "queryPeriod": "PT15M",
+        "severity": "Medium",
+        "suppressionDuration": "PT15M",
+        "suppressionEnabled": true,
+        "tactics": [
+          "Reconnaissance",
+          "InitialAccess"
+        ],
+        "techniques": [
+          "T1595",
+          "T1190"
+        ],
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0
+      },
+      "type": "Microsoft.SecurityInsights/alertRules"
+    }
+  ]
+}

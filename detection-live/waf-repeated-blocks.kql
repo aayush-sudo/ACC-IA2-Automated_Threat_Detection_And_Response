@@ -1,0 +1,32 @@
+// LIVE version of sentinel-rules/queries/waf-repeated-blocks.kql (Aayush, Person 2).
+// Analytics rule "ATDR – Repeated WAF blocks from one client": High, every 5 min, lookback 15 min.
+// Changes from the original (checked against atdr-law, 2026-10-23):
+//  - Window and threshold unchanged: >= 5 distinct blocked transactions from one ClientIp in 15 min.
+//    Real data: one T1-T6 run produced 6 (2 managed-rule blocks + 4 RateLimitDemo blocks).
+//  - Action =~ "Blocked" kept: on DRS 2.1 the individual rules log "Matched"; the block decision is
+//    one row per transaction (RuleId 949110 for managed rules, RateLimitDemo for the rate limit).
+//  - Added VmResourceId (the protected backend VM) for the AzureResource entity mapping.
+//    __PROTECTED_VM_ID__ is replaced by detection-live/deploy-rules.sh at deploy time.
+AGWFirewallLogs
+| where TimeGenerated > ago(15m)
+| where Action =~ "Blocked"
+| where isnotempty(ClientIp) and isnotempty(TransactionId)
+| summarize
+    blockedEvents = count(),
+    blockedTransactions = dcount(TransactionId),
+    ruleIds = make_set(RuleId, 20),
+    sampleUris = make_set(RequestUri, 5),
+    firstSeen = min(TimeGenerated),
+    lastSeen = max(TimeGenerated)
+    by ClientIp
+| where blockedTransactions >= 5
+| project
+    TimeGenerated = lastSeen,
+    ClientIp,
+    blockedEvents,
+    blockedTransactions,
+    ruleIds,
+    sampleUris,
+    firstSeen,
+    lastSeen
+| extend VmResourceId = "__PROTECTED_VM_ID__"

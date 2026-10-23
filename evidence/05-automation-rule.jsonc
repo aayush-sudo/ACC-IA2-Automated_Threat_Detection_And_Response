@@ -1,0 +1,42 @@
+// Phase 5 — automation rule as stored in Sentinel (GET api-version 2024-03-01, 2026-10-23T20:48:37Z); createdBy/lastModifiedBy removed
+{
+  "automationRule": {
+    "id": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/AutomationRules/4f5cb1ad-17ee-441b-94e7-b3358131d28b",
+    "name": "4f5cb1ad-17ee-441b-94e7-b3358131d28b",
+    "properties": {
+      "actions": [
+        {
+          "actionConfiguration": {
+            "logicAppResourceId": "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Logic/workflows/atdr-playbook-contain",
+            "tenantId": "<tenant-id>"
+          },
+          "actionType": "RunPlaybook",
+          "order": 1
+        }
+      ],
+      "createdTimeUtc": "2026-10-23T20:47:37Z",
+      "displayName": "ATDR – Run containment playbook on ATDR incidents",
+      "lastModifiedTimeUtc": "2026-10-23T20:47:37Z",
+      "order": 1,
+      "triggeringLogic": {
+        "conditions": [
+          {
+            "conditionProperties": {
+              "operator": "Contains",
+              "propertyName": "IncidentRelatedAnalyticRuleIds",
+              "propertyValues": [
+                "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/alertRules/61f2546c-043a-4cd5-912f-e3e354c6b45a",
+                "/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/alertRules/f28693aa-8349-4ff4-a6d1-77040f2faaf8"
+              ]
+            },
+            "conditionType": "Property"
+          }
+        ],
+        "isEnabled": true,
+        "triggersOn": "Incidents",
+        "triggersWhen": "Created"
+      }
+    },
+    "type": "Microsoft.SecurityInsights/AutomationRules"
+  }
+}
