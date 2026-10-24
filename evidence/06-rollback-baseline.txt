@@ -1,0 +1,18 @@
+# Phase 6 — rollback after the manual baseline (rollback.sh --delete-snapshot, atdr-snap-manual deleted, incidents closed), site/backend check
+[2026-10-24T23:43:35Z] VM atdr-vm-backend: SecurityStatus='Quarantined' IncidentNumber='9' QuarantinedAt=''
+[2026-10-24T23:43:35Z] NIC NSG now:      atdr-nsg-isolation
+[2026-10-24T23:43:35Z] OriginalNsg tag:  
+No usable OriginalNsg tag; falling back to atdr-nsg-backend
+[2026-10-24T23:43:35Z] Re-attaching atdr-nsg-backend to atdr-vm-backendVMNic
+[2026-10-24T23:43:40Z] Removing quarantine tags in one call: SecurityStatus IncidentNumber
+[2026-10-24T23:43:43Z] Snapshot atdr-snap-9 not found; nothing to delete
+[2026-10-24T23:43:43Z] Verify
+  NIC NSG:  atdr-nsg-backend
+  VM tags:  {"Project":"ATDR","Role":"TestBackend"}
+  Snapshots in rg-atdr: atdr-snap-manual 
+[2026-10-24T23:43:47Z] Deleting manual snapshot atdr-snap-manual
+[2026-10-24T23:44:21Z] Snapshots in rg-atdr: ''
+rollback started 2026-10-24T23:43:29Z ended 2026-10-24T23:44:23Z
+[2026-10-24T23:44:28Z] closing incident #12: incident 12 Closed BenignPositive
+[2026-10-24T23:44:35Z] closing incident #11: incident 11 Closed BenignPositive
+[2026-10-24T23:45:10Z] GET / -> 200  backend -> Healthy

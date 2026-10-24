@@ -1,0 +1,70 @@
+# Phase 6 — E2E run baseline (report collected 2026-10-24T23:42:57Z); IPs masked, IDs sanitised
+# Live log of the run: see 'Run log' at the end
+
+## Timeline
+T0 attack start          2026-10-24T23:16:13Z
+attack end               2026-10-24T23:16:15Z
+incident #12 created   2026-10-24T23:23:26.7366667Z  (Medium, rule rate-limit)
+incident #11 created   2026-10-24T23:23:13.5866667Z  (High, rule repeated-blocks)
+isolation verified       2026-10-24T23:40:35Z  (poll: VM tag SecurityStatus=Quarantined and NIC on atdr-nsg-isolation)
+first 502 via gateway    2026-10-24T23:34:36Z
+backend Unhealthy        2026-10-24T23:34:49Z
+
+## Manual response steps (first poll that showed each step in Azure; polls every ~15-30 s)
+snapshot exists          2026-10-24T23:29:00Z
+NIC on isolation NSG     2026-10-24T23:30:40Z
+tag SecurityStatus       2026-10-24T23:40:34Z
+comment on incident      2026-10-24T23:35:14Z
+Discord message          (posted by the operator; time reported in chat, see Run log)
+
+## Incidents since T0 (Defender sync: providerName / providerIncidentId / incidentUrl)
+#12 ATDR – WAF rate limit triggered by <tester-ip> | Medium | status New | provider Microsoft XDR | providerIncidentId 10 | alerts 1
+   url https://portal.azure.com/#asset/Microsoft_Azure_Security_Insights/Incident/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/Incidents/bc65c3f9-62bc-40a5-9f07-549fe5254891
+   entities:
+      AzureResource /subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend
+      Ip <tester-ip>
+   comments:
+#11 ATDR – Repeated WAF blocks from <tester-ip> | High | status New | provider Microsoft XDR | providerIncidentId 9 | alerts 1
+   url https://portal.azure.com/#asset/Microsoft_Azure_Security_Insights/Incident/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/Incidents/a05cafdc-f861-41e6-8500-19aa541aa1cd
+   entities:
+      AzureResource /subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend
+      Ip <tester-ip>
+   comments:
+      2026-10-24T23:34:40.4159878Z <p><span>Manual containment: snapshot atdr-snap-manual, NIC moved to atdr-nsg-isolation, VM tagged Quarantined.</span></p>
+
+## Playbook runs since T0 (which incident each run handled, key action times)
+
+## Who responded
+Manual baseline: the automation rule stayed OFF (pre-flight checked enabled=false), so the playbook-run
+list above must be empty; every containment step was done by a person in the Azure and Defender portals.
+
+## Run log
+[2026-10-24T23:15:50Z] MANUAL baseline baseline against our gateway <appgw-public-ip>; automation rule stays OFF
+[2026-10-24T23:16:13Z] pre-flight: no open ATDR incidents, VM tags clean, NIC on atdr-nsg-backend, GET / -> 200, backend health Healthy, automation rule enabled=false
+[2026-10-24T23:16:13Z] T0 attack start
+[2026-10-24T23:16:13.833Z] attack search="' OR 1=1--" -> HTTP 403
+[2026-10-24T23:16:13.947Z] attack search="1' UNION SELECT username, password FROM users--" -> HTTP 403
+[2026-10-24T23:16:13.971Z] attack search="<script>alert('xss')</script>" -> HTTP 403
+[2026-10-24T23:16:14.007Z] attack search='<img src=x onerror=alert(1)>' -> HTTP 403
+[2026-10-24T23:16:14.028Z] attack search='<svg/onload=alert(1)>' -> HTTP 403
+[2026-10-24T23:16:15.621Z] burst of 50 in 1.5s: 200s=31 403s=19 first 403 at #30
+[2026-10-24T23:16:15.624Z] burst statuses: 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 200 403 200 403 200 403 403 403 403 403 403 403 403 403 403 403 403 403 403 403 403 403
+[2026-10-24T23:16:15Z] attack end; now waiting for Sentinel (logs ~4 min + rule schedule 5 min)
+[2026-10-24T23:23:36Z] incidents since T0:
+    #12|2026-10-24T23:23:26.7366667Z|Medium|rate-limit|bc65c3f9-62bc-40a5-9f07-549fe5254891|ATDR – WAF rate limit triggered by <tester-ip>
+    #11|2026-10-24T23:23:13.5866667Z|High|repeated-blocks|a05cafdc-f861-41e6-8500-19aa541aa1cd|ATDR – Repeated WAF blocks from <tester-ip>
+[2026-10-24T23:29:00Z] MANUAL step seen: snapshot atdr-snap-manual
+[2026-10-24T23:30:40Z] MANUAL step seen: NIC on atdr-nsg-isolation
+[2026-10-24T23:31:24Z] GET / via gateway -> 000
+[2026-10-24T23:31:37Z] backend health -> Healthy
+[2026-10-24T23:32:41Z] GET / via gateway -> 000
+[2026-10-24T23:32:53Z] backend health -> Healthy
+[2026-10-24T23:33:58Z] GET / via gateway -> 000
+[2026-10-24T23:34:10Z] backend health -> Healthy
+[2026-10-24T23:34:36Z] GET / via gateway -> 502
+[2026-10-24T23:34:49Z] backend health -> Unhealthy
+[2026-10-24T23:35:14Z] MANUAL step seen: comment on the High incident
+[2026-10-24T23:40:34Z] MANUAL step seen: tag SecurityStatus=Quarantined IncidentNumber=9
+[2026-10-24T23:40:35Z] ISOLATION VERIFIED: SecurityStatus=Quarantined IncidentNumber=9 NIC NSG=atdr-nsg-isolation
+[2026-10-24T23:40:35Z] all checks done
+[2026-10-24T23:42:53Z] OPERATOR: Discord message posted; stopwatch 11:09 (started when the High incident appeared in the operator's Defender incident list, stopped after the Discord post)

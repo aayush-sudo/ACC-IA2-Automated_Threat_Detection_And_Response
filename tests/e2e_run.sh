@@ -77,14 +77,16 @@ for i in d["value"]:
         print("{}|{}".format(p["incidentNumber"], i["name"]))
 ' "$RULE_BLOCKS_ID" "$RULE_RATE_ID"
 }
-close_incident() {  # $1 guid: Closed / BenignPositive (our own authorised test traffic)
+close_incident() {  # $1 guid: Closed / BenignPositive (our own test traffic) unless CLOSE_CLASS/_REASON/_COMMENT set
   local url="https://management.azure.com$SI/incidents/$1?api-version=2024-03-01" body
   body="$(mktemp)"
   az rest --method get -o json --url "$url" | pyj '
 p = d["properties"]
 keep = {k: p[k] for k in ("title", "severity", "description", "owner", "labels") if k in p}
-keep.update(status="Closed", classification="BenignPositive", classificationReason="SuspiciousButExpected",
-            classificationComment="ATDR E2E test traffic from our own laptop; VM rolled back with response/rollback.sh.")
+import os; e = os.environ
+keep.update(status="Closed", classification=e.get("CLOSE_CLASS") or "BenignPositive",
+            classificationReason=e.get("CLOSE_REASON") or "SuspiciousButExpected",
+            classificationComment=e.get("CLOSE_COMMENT") or "ATDR E2E test traffic from our own laptop; VM rolled back with response/rollback.sh.")
 json.dump({"etag": d.get("etag"), "properties": keep}, open(sys.argv[1], "w"))
 ' "$(winpath "$body")"
   az rest --method put --url "$url" --body @"$(winpath "$body")" \
@@ -167,6 +169,11 @@ for a in sorted(d["value"], key=lambda a: a["properties"].get("startTime", "")):
         print("   {:<20} {} -> {}  {}".format(a["name"], p.get("startTime"), p.get("endTime"), p.get("status")))'
     done 3< <(runs_since "$T0")
     echo
+    if [[ -n "${MANUAL:-}" ]]; then
+      echo "## Who responded"
+      echo "Manual baseline: the automation rule stayed OFF (pre-flight checked enabled=false), so the playbook-run"
+      echo "list above must be empty; every containment step was done by a person in the Azure and Defender portals."
+    else
     echo "## Who started the playbook"
     echo "Proof that the automation rule (not a person) started each run:"
     echo " - this script never calls runPlaybook or the Logic App trigger; it only switches the automation rule on/off;"
@@ -174,6 +181,7 @@ for a in sorted(d["value"], key=lambda a: a["properties"].get("startTime", "")):
     echo "   and each run started ~10-12 s after that incident was created (timeline above)."
     echo "Not used: the SentinelHealth table (health diagnostic setting atdr-sentinel-health enabled 2026-10-23T21:28Z)"
     echo "stayed empty, and the Activity Log does not record runPlaybook calls."
+    fi
     echo
     echo "## Run log"
     cat "$RAW"
