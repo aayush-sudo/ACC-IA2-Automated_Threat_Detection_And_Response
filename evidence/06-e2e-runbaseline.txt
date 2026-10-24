@@ -1,4 +1,4 @@
-# Phase 6 — E2E run baseline (report collected 2026-10-24T23:42:57Z); IPs masked, IDs sanitised
+# Phase 6 — E2E run baseline (report collected 2026-10-24T23:57:54Z); IPs masked, IDs sanitised
 # Live log of the run: see 'Run log' at the end
 
 ## Timeline
@@ -17,14 +17,14 @@ tag SecurityStatus       2026-10-24T23:40:34Z
 comment on incident      2026-10-24T23:35:14Z
 Discord message          (posted by the operator; time reported in chat, see Run log)
 
-## Incidents since T0 (Defender sync: providerName / providerIncidentId / incidentUrl)
-#12 ATDR – WAF rate limit triggered by <tester-ip> | Medium | status New | provider Microsoft XDR | providerIncidentId 10 | alerts 1
+## Incidents of this run (T0 .. T0+45 min) (Defender sync: providerName / providerIncidentId / incidentUrl)
+#12 ATDR – WAF rate limit triggered by <tester-ip> | Medium | status Closed | provider Microsoft XDR | providerIncidentId 10 | alerts 1
    url https://portal.azure.com/#asset/Microsoft_Azure_Security_Insights/Incident/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/Incidents/bc65c3f9-62bc-40a5-9f07-549fe5254891
    entities:
       AzureResource /subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend
       Ip <tester-ip>
    comments:
-#11 ATDR – Repeated WAF blocks from <tester-ip> | High | status New | provider Microsoft XDR | providerIncidentId 9 | alerts 1
+#11 ATDR – Repeated WAF blocks from <tester-ip> | High | status Closed | provider Microsoft XDR | providerIncidentId 9 | alerts 1
    url https://portal.azure.com/#asset/Microsoft_Azure_Security_Insights/Incident/subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.OperationalInsights/workspaces/atdr-law/providers/Microsoft.SecurityInsights/Incidents/a05cafdc-f861-41e6-8500-19aa541aa1cd
    entities:
       AzureResource /subscriptions/<sub-id>/resourceGroups/rg-atdr/providers/Microsoft.Compute/virtualMachines/atdr-vm-backend
@@ -32,7 +32,7 @@ Discord message          (posted by the operator; time reported in chat, see Run
    comments:
       2026-10-24T23:34:40.4159878Z <p><span>Manual containment: snapshot atdr-snap-manual, NIC moved to atdr-nsg-isolation, VM tagged Quarantined.</span></p>
 
-## Playbook runs since T0 (which incident each run handled, key action times)
+## Playbook runs of this run (T0 .. T0+45 min) (which incident each run handled, key action times)
 
 ## Who responded
 Manual baseline: the automation rule stayed OFF (pre-flight checked enabled=false), so the playbook-run
@@ -68,3 +68,5 @@ list above must be empty; every containment step was done by a person in the Azu
 [2026-10-24T23:40:35Z] ISOLATION VERIFIED: SecurityStatus=Quarantined IncidentNumber=9 NIC NSG=atdr-nsg-isolation
 [2026-10-24T23:40:35Z] all checks done
 [2026-10-24T23:42:53Z] OPERATOR: Discord message posted; stopwatch 11:09 (started when the High incident appeared in the operator's Defender incident list, stopped after the Discord post)
+[2026-10-24T23:44:28Z] closing incident #12: incident 12 Closed BenignPositive
+[2026-10-24T23:44:35Z] closing incident #11: incident 11 Closed BenignPositive

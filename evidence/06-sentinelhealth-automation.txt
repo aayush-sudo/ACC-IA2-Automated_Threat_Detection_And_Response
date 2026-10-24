@@ -1,0 +1,18 @@
+# Phase 6 — SentinelHealth: automation rule runs (collected 2026-10-24T23:49:22Z)
+# Health monitoring (diagnostic setting atdr-sentinel-health) was enabled 2026-10-23T21:28Z; the first
+# SentinelHealth rows arrived at 22:12Z, so run 1 (21:38Z) is not covered. Run 2 (22:53Z) is.
+
+2026-10-23T22:53:29.6743696Z | ATDR – Run containment playbook on ATDR incidents | Success | Rule executed successfully, triggering all actions.
+    triggered on Incident Created -> incident #6; playbook run 08584088108861891521020005006CU05
+2026-10-23T22:53:37.0701993Z | ATDR – Run containment playbook on ATDR incidents | Success | Rule executed successfully, triggering all actions.
+    triggered on Incident Created -> incident #5; playbook run 08584088108853364030978883559CU25
+
+# Match with the playbook runs in evidence/06-e2e-run2.txt:
+#   run 08584088108861891521020005006CU05 handled incident #6 (Medium); run 08584088108853364030978883559CU25 handled #5 (High)
+
+# Analytics rule runs recorded (for reference):
+SentinelResourceName                        Status   runs  firstSeen                     lastSeen                    
+------------------------------------------  -------  ----  ----------------------------  ----------------------------
+ATDR – Repeated WAF blocks from one client  Success  301   2026-10-23T22:12:32.9283052Z  2026-10-24T23:47:57.0766746Z
+ATDR – WAF rate limit triggered             Success  301   2026-10-23T22:12:39.8650229Z  2026-10-24T23:48:04.3043546Z
+(2 rows)

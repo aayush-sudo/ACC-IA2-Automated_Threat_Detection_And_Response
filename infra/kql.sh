@@ -28,7 +28,10 @@ az rest --method post --resource "https://api.loganalytics.io" \
   --body @"$(winpath "$BODY")" -o json \
 | FORMAT="$FORMAT" python -c '
 import json, os, sys
-d = json.loads(sys.stdin.buffer.read().decode("utf-8", "replace"))
+sys.stdout.reconfigure(encoding="utf-8")
+raw = sys.stdin.buffer.read()   # az output is cp1252 on Windows when piped
+try: d = json.loads(raw.decode("utf-8"))
+except UnicodeDecodeError: d = json.loads(raw.decode("cp1252"))
 t = d["tables"][0]
 cols = [c["name"] for c in t["columns"]]
 rows = [dict(zip(cols, r)) for r in t["rows"]]

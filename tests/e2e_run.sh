@@ -47,23 +47,23 @@ incidents_since() {  # number|createdTimeUtc|severity|rule|guid|title
   az rest --method get -o json \
     --url "https://management.azure.com$SI/incidents?api-version=2024-03-01&\$orderby=properties/createdTimeUtc desc&\$top=10" |
   pyj '
-t0, rb, rr = sys.argv[1], sys.argv[2].lower(), sys.argv[3].lower()
+t0, rb, rr, t1 = sys.argv[1], sys.argv[2].lower(), sys.argv[3].lower(), sys.argv[4]
 for i in d["value"]:
     p = i["properties"]
-    if p["createdTimeUtc"] < t0: continue
+    if p["createdTimeUtc"] < t0 or (t1 and p["createdTimeUtc"] > t1): continue
     rules = " ".join(p.get("relatedAnalyticRuleIds", [])).lower()
     rule = "repeated-blocks" if rb in rules else "rate-limit" if rr in rules else "other"
     print("|".join([str(p["incidentNumber"]), p["createdTimeUtc"], p["severity"], rule, i["name"], p["title"]]))
-' "$1" "$RULE_BLOCKS_ID" "$RULE_RATE_ID"
+' "$1" "$RULE_BLOCKS_ID" "$RULE_RATE_ID" "${2:-}"
 }
 runs_since() {  # runName|startTime|endTime|status
   az rest --method get -o json --url "https://management.azure.com$PB_ID/runs?api-version=2016-06-01&\$top=10" |
   pyj '
 for r in d["value"]:
     p = r["properties"]
-    if p["startTime"] < sys.argv[1]: continue
+    if p["startTime"] < sys.argv[1] or (sys.argv[2] and p["startTime"] > sys.argv[2]): continue
     print("|".join([r["name"], p["startTime"], p.get("endTime") or "-", p["status"]]))
-' "$1"
+' "$1" "${2:-}"
 }
 open_atdr_incidents() {  # number|guid of every not-Closed incident from our two rules
   az rest --method get -o json \
@@ -108,6 +108,8 @@ backend_health() {
 report() {
   # shellcheck disable=SC1090
   source "$STATE"
+  local T1   # report window: incidents/runs/health rows of THIS run only (every run finished within 45 min)
+  T1="$(date -u -d "$T0 + 45 minutes" +%Y-%m-%dT%H:%M:%SZ)"
   {
     echo "# Phase 6 — E2E run $N (report collected $(utc_now)); IPs masked, IDs sanitised"
     echo "# Live log of the run: see 'Run log' at the end"
@@ -115,10 +117,10 @@ report() {
     echo "## Timeline"
     echo "T0 attack start          $T0"
     echo "attack end               $T_ATTACK_END"
-    incidents_since "$T0" | while IFS='|' read -r num created sev rule guid title; do
+    incidents_since "$T0" "$T1" | while IFS='|' read -r num created sev rule guid title; do
       echo "incident #$num created   $created  ($sev, rule $rule)"
     done
-    runs_since "$T0" | sort -t'|' -k2 | while IFS='|' read -r name start end status; do
+    runs_since "$T0" "$T1" | sort -t'|' -k2 | while IFS='|' read -r name start end status; do
       echo "playbook run start       $start  (run $name)"
       echo "playbook run end         $end  ($status)"
     done
@@ -135,7 +137,7 @@ report() {
       echo "Discord message          (posted by the operator; time reported in chat, see Run log)"
     fi
     echo
-    echo "## Incidents since T0 (Defender sync: providerName / providerIncidentId / incidentUrl)"
+    echo "## Incidents of this run (T0 .. T0+45 min) (Defender sync: providerName / providerIncidentId / incidentUrl)"
     while IFS='|' read -r num created sev rule guid title <&3; do
       az rest --method get -o json --url "https://management.azure.com$SI/incidents/$guid?api-version=2024-03-01" | pyj '
 p = d["properties"]
@@ -150,9 +152,9 @@ for e in d.get("entities", []):
       az rest --method get -o json --url "https://management.azure.com$SI/incidents/$guid/comments?api-version=2024-03-01" | pyj '
 for c in sorted(d.get("value", []), key=lambda c: c["properties"]["createdTimeUtc"]):
     print("     ", c["properties"]["createdTimeUtc"], c["properties"]["message"].replace("\n", " / ")[:400])'
-    done 3< <(incidents_since "$T0")
+    done 3< <(incidents_since "$T0" "$T1")
     echo
-    echo "## Playbook runs since T0 (which incident each run handled, key action times)"
+    echo "## Playbook runs of this run (T0 .. T0+45 min) (which incident each run handled, key action times)"
     while IFS='|' read -r name start end status <&3; do
       echo "run $name  $start -> $end  $status"
       az rest --method get -o json --url "https://management.azure.com$PB_ID/runs/$name?api-version=2016-06-01" | pyj '
@@ -167,7 +169,7 @@ for a in sorted(d["value"], key=lambda a: a["properties"].get("startTime", "")):
     if a["name"] in want and a["properties"].get("status") != "Skipped":
         p = a["properties"]
         print("   {:<20} {} -> {}  {}".format(a["name"], p.get("startTime"), p.get("endTime"), p.get("status")))'
-    done 3< <(runs_since "$T0")
+    done 3< <(runs_since "$T0" "$T1")
     echo
     if [[ -n "${MANUAL:-}" ]]; then
       echo "## Who responded"
@@ -179,17 +181,35 @@ for a in sorted(d["value"], key=lambda a: a["properties"].get("startTime", "")):
     echo " - this script never calls runPlaybook or the Logic App trigger; it only switches the automation rule on/off;"
     echo " - each run's trigger data (Microsoft_Sentinel_incident, objectEventType Create) names the incident it handled,"
     echo "   and each run started ~10-12 s after that incident was created (timeline above)."
-    echo "Not used: the SentinelHealth table (health diagnostic setting atdr-sentinel-health enabled 2026-10-23T21:28Z)"
-    echo "stayed empty, and the Activity Log does not record runPlaybook calls."
+    echo " - SentinelHealth (rows arrive ~5-10 min late; re-run --report if empty) records each automation-rule run"
+    echo "   with the incident and the playbook RunId it started:"
+    bash "$REPO_ROOT/infra/kql.sh" --json --timespan P2D "SentinelHealth
+| where TimeGenerated between (datetime($T0) .. datetime($T1)) and SentinelResourceType == 'Automation rule'
+| project TimeGenerated, Status, ExtendedProperties" | python -c '
+import json, sys
+sys.stdout.reconfigure(encoding="utf-8")
+rows = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+for r in rows:
+    e = r["ExtendedProperties"]; e = json.loads(e) if isinstance(e, str) else e
+    print("     {} {} incident #{} -> playbook run {}".format(r["TimeGenerated"], r["Status"], e.get("IncidentNumber"),
+          ", ".join(p["RunId"] for p in e.get("TriggeredPlaybooks", []))))
+if not rows: print("     (no SentinelHealth rows yet)")' || echo "     (query failed)"
     fi
     echo
     echo "## Run log"
     cat "$RAW"
   } > "$OUT.tmp"
-  # Mask our own laptop's IP (from the access log, User-Agent ATDR-e2e) and the gateway's IP.
-  local tester
-  tester="$(bash "$REPO_ROOT/infra/kql.sh" --json --timespan P1D 'AGWAccessLogs | where UserAgent startswith "ATDR-e2e" | summarize ip = take_any(ClientIp)' | python -c 'import json,sys; r=json.load(sys.stdin); print(r[0]["ip"] if r and r[0]["ip"] else "")')"
-  sed -e "s/${PIP//./\\.}/<appgw-public-ip>/g" ${tester:+-e "s/${tester//./\\.}/<tester-ip>/g"} "$OUT.tmp" | sanitize > "$OUT"
+  # Mask our own laptop's IP(s) in this run's window (User-Agent ATDR-e2e; the ISP may change it between
+  # runs) and the gateway's IP; then, as a safety net, any other IPv4 address to its first two octets.
+  local testers ip
+  local sedargs=(-e "s/${PIP//./\.}/<appgw-public-ip>/g")
+  testers="$(bash "$REPO_ROOT/infra/kql.sh" --json --timespan P30D "AGWAccessLogs
+| where TimeGenerated between (datetime($T0) .. datetime($T1)) and UserAgent startswith 'ATDR-e2e'
+| distinct ClientIp" | python -c 'import json,sys; print(" ".join(r["ClientIp"] for r in json.load(sys.stdin)))')"
+  for ip in $testers; do sedargs+=(-e "s/${ip//./\.}/<tester-ip>/g"); done
+  sed "${sedargs[@]}" "$OUT.tmp" |
+    sed -E 's/\b([0-9]{1,3}\.[0-9]{1,3})\.[0-9]{1,3}\.[0-9]{1,3}\b/\1.x.x/g' |
+    sanitize > "$OUT"
   rm -f "$OUT.tmp"
   echo "report written: $OUT"
 }
