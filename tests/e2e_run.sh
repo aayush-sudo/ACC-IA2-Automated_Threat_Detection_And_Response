@@ -6,7 +6,9 @@
 #   bash tests/e2e_run.sh <run-number>             attack + watch until isolation is verified (~10-20 min)
 #   bash tests/e2e_run.sh <run-number> --watch     re-attach the watcher to a run (same T0, no traffic)
 #   bash tests/e2e_run.sh <name> --preflight        dry pre-flight only: no traffic, automation rule untouched
-#   bash tests/e2e_run.sh <name> --manual           manual-response baseline: attack with the automation rule
+#   bash tests/e2e_run.sh <name> --watch-only       automation ON, sends NO traffic, watches for an incident from
+#                                                  any IP (traffic from another laptop); leaves the VM isolated
+#   bash tests/e2e_run.sh <name> --manual          manual-response baseline: attack with the automation rule
 #                                                  OFF, then record when each manual portal step shows up
 #   bash tests/e2e_run.sh <run-number> --report    re-collect the report later
 #   bash tests/e2e_run.sh <run-number> --close     after rollback: close the run's incidents (an open
@@ -20,7 +22,7 @@ set -Eeuo pipefail
 source "$(dirname "$0")/../infra/common.sh"
 source "$REPO_ROOT/detection-live/rule-ids.sh"
 
-N="${1:?usage: e2e_run.sh <run-number> [--watch|--report|--close|--preflight|--manual]}"
+N="${1:?usage: e2e_run.sh <run-number> [--watch|--watch-only|--report|--close|--preflight|--manual]}"
 MODE="${2:-run}"
 RAW_DIR="$EVIDENCE_DIR/raw"; mkdir -p "$RAW_DIR"
 RAW="$RAW_DIR/06-e2e-run$N.log"
@@ -109,13 +111,23 @@ report() {
   # shellcheck disable=SC1090
   source "$STATE"
   local T1   # report window: incidents/runs/health rows of THIS run only (every run finished within 45 min)
-  T1="$(date -u -d "$T0 + 45 minutes" +%Y-%m-%dT%H:%M:%SZ)"
+  local window=45; [[ -n "${EXTERNAL:-}" ]] && window=90   # watch-only: traffic may start well after T0
+  T1="$(date -u -d "$T0 + $window minutes" +%Y-%m-%dT%H:%M:%SZ)"
   {
     echo "# Phase 6 — E2E run $N (report collected $(utc_now)); IPs masked, IDs sanitised"
     echo "# Live log of the run: see 'Run log' at the end"
     echo
     echo "## Timeline"
-    echo "T0 attack start          $T0"
+    if [[ -n "${EXTERNAL:-}" ]]; then
+      echo "T0 watcher start         $T0  (watch-only: the traffic came from another laptop)"
+      bash "$REPO_ROOT/infra/kql.sh" --json --timespan P30D "AGWAccessLogs
+| where TimeGenerated between (datetime($T0) .. datetime($T1)) and UserAgent startswith 'ATDR-'
+| summarize firstReq = min(TimeGenerated), lastReq = max(TimeGenerated), n = count(), blocked = countif(HttpStatus == 403)" |
+        python -c 'import json,sys; r=json.load(sys.stdin); r=r[0] if r else {}
+print("test traffic (access log) {} .. {}  ({} requests, {} x 403)".format(r.get("firstReq"), r.get("lastReq"), r.get("n"), r.get("blocked")))' || true
+    else
+      echo "T0 attack start          $T0"
+    fi
     echo "attack end               $T_ATTACK_END"
     incidents_since "$T0" "$T1" | while IFS='|' read -r num created sev rule guid title; do
       echo "incident #$num created   $created  ($sev, rule $rule)"
@@ -204,7 +216,7 @@ if not rows: print("     (no SentinelHealth rows yet)")' || echo "     (query fa
   local testers ip
   local sedargs=(-e "s/${PIP//./\.}/<appgw-public-ip>/g")
   testers="$(bash "$REPO_ROOT/infra/kql.sh" --json --timespan P30D "AGWAccessLogs
-| where TimeGenerated between (datetime($T0) .. datetime($T1)) and UserAgent startswith 'ATDR-e2e'
+| where TimeGenerated between (datetime($T0) .. datetime($T1)) and UserAgent startswith 'ATDR-'
 | distinct ClientIp" | python -c 'import json,sys; print(" ".join(r["ClientIp"] for r in json.load(sys.stdin)))')"
   for ip in $testers; do sedargs+=(-e "s/${ip//./\.}/<tester-ip>/g"); done
   sed "${sedargs[@]}" "$OUT.tmp" |
@@ -245,21 +257,7 @@ sys.path.insert(0, sys.argv[1])
 import waf_tests as w
 w.USER_AGENT = sys.argv[3]
 run = w.Run(sys.argv[2], os.devnull)
-ATTACKS = [  # standard, documented WAF test strings
-    "' OR 1=1--",
-    "1' UNION SELECT username, password FROM users--",
-    "<script>alert('xss')</script>",
-    "<img src=x onerror=alert(1)>",
-    "<svg/onload=alert(1)>",
-]
-for a in ATTACKS:
-    print("[{}] attack search={!r} -> HTTP {}".format(w.utc_now(), a, run.get("/products", {"search": a})), flush=True)
-t = time.monotonic()
-st = [run.get("/products", {"search": "lock"}) for _ in range(w.BURST)]
-first = next((i + 1 for i, s in enumerate(st) if s == 403), None)
-print("[{}] burst of {} in {:.1f}s: 200s={} 403s={} first 403 at #{}".format(
-    w.utc_now(), len(st), time.monotonic() - t, st.count(200), st.count(403), first), flush=True)
-print("[{}] burst statuses: {}".format(w.utc_now(), " ".join(map(str, st))), flush=True)
+w.attack(run)  # the 5 test strings + the burst (tests/waf_tests.py)
 EOF
   T_ATTACK_END="$(utc_now)"
   log "attack end; now waiting for Sentinel (logs ~4 min + rule schedule 5 min)"
@@ -269,6 +267,7 @@ save_state() {
   {
     printf 'T0=%s\nT_ATTACK_END=%s\nT_ISOLATED=%s\nT_502=%s\nT_UNHEALTHY=%s\n' \
       "$T0" "$T_ATTACK_END" "${T_ISOLATED:-}" "${T_502:-}" "${T_UNHEALTHY:-}"
+    printf 'EXTERNAL=%s\n' "${EXTERNAL:-}"
     printf 'MANUAL=%s\nT_M_SNAPSHOT=%s\nT_M_NSG=%s\nT_M_TAG=%s\nT_M_COMMENT=%s\n' \
       "${MANUAL:-}" "${T_M_SNAPSHOT:-}" "${T_M_NSG:-}" "${T_M_TAG:-}" "${T_M_COMMENT:-}"
   } > "$STATE"
@@ -298,6 +297,15 @@ case "$MODE" in
     : > "$RAW"; MANUAL=1
     log "MANUAL baseline $N against our gateway <appgw-public-ip>; automation rule stays OFF"
     preflight; attack; save_state ;;
+  --watch-only)  # someone else sends the traffic (e.g. waf_tests.py from a teammate's laptop): we only watch
+    : > "$RAW"; EXTERNAL=1
+    log "WATCH-ONLY $N: this script sends NO traffic; watching for an incident from ANY client IP"
+    preflight
+    trap 'bash "$REPO_ROOT/detection-live/automation-rule.sh" off | tee -a "$RAW"; log "VM left as it is (isolated if the playbook ran); restore with: bash response/rollback.sh --delete-snapshot"' EXIT
+    bash "$REPO_ROOT/detection-live/automation-rule.sh" on | tee -a "$RAW"
+    T0="$(utc_now)"; T_ATTACK_END="(external traffic: see the access-log line in the report)"
+    log "T0 watcher start. Ready: send the traffic now (python waf_tests.py http://<gateway-ip>/)"
+    save_state ;;
   run)
     : > "$RAW"
     log "E2E run $N against our gateway <appgw-public-ip>; VM $VM_NAME"
@@ -313,7 +321,7 @@ esac
 T_ISOLATED=""; T_502=""; T_UNHEALTHY=""; seen_inc=""; seen_runs=""
 T_M_SNAPSHOT=""; T_M_NSG=""; T_M_TAG=""; T_M_COMMENT=""
 START=$SECONDS
-LIMIT=2100; [[ -n "${MANUAL:-}" ]] && LIMIT=2700   # manual: allow 45 min
+LIMIT=2100; [[ -n "${MANUAL:-}" ]] && LIMIT=2700; [[ -n "${EXTERNAL:-}" ]] && LIMIT=3600   # manual 45, watch-only 60 min
 while (( SECONDS - START < LIMIT )); do
   incs="$(incidents_since "$T0")"; runs="$(runs_since "$T0")"
   [[ "$incs" != "$seen_inc" ]] && { log "incidents since T0:"; sed 's/^/    #/' <<<"$incs" | tee -a "$RAW"; seen_inc="$incs"; }

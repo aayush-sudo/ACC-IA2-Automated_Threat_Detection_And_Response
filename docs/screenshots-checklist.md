@@ -49,8 +49,9 @@ tenant ID, e-mail addresses and your own public IP.
 - [ ] Optional: Defender → Incidents showing the four closed scanner incidents (TruePositive).
 - [ ] Optional: atdr-law → Logs, `SentinelHealth | where SentinelResourceType == "Automation rule"` (run 2's two rows: proof that the automation rule started the playbook).
 
-## Recording day (`docs/demo-script.md`)
-- [ ] Terminal output of `tests/e2e_run.sh rec1`: the 403 lines and the burst line.
+## Recording day (`docs/demo-script.md`: Person 1 by Anthony, Person 3 by the teammate)
+- [ ] Teammate's terminal: `waf_tests.py --attack` output (the 403 lines, the burst line, `OK`).
+- [ ] Anthony's terminal: `tests/e2e_run.sh p3 --watch-only` stages (incident, playbook run, isolation verified, 502, Unhealthy).
 - [ ] Defender incident page of the recorded run (entities and comment).
 - [ ] Playbook run of the recorded run (green steps).
 - [ ] 502 page and Backend health Unhealthy.

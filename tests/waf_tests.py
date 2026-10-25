@@ -14,6 +14,13 @@ Sends about 60 requests in total, using standard, documented WAF test strings:
   T5  burst of 50 normal requests in < 1 min  -> later requests 403 (RateLimitDemo)
   T6  wait for the rate-limit window to pass, GET / again -> expect 200
 
+With --attack it skips T1-T6 and sends the same traffic as one end-to-end run instead:
+the 5 standard SQLi/XSS test strings below, then the 50-request burst (55 requests).
+That gives 5 managed-rule blocks plus the rate-limit blocks, so both Sentinel rules
+fire (>= 5 blocked requests from one IP; >= 3 RateLimitDemo blocks):
+
+    python waf_tests.py http://<gateway-public-ip>/ --attack
+
 Every step prints a PASS/FAIL line with a UTC timestamp; everything is also written
 to a results file (default: waf_test_results_<UTC time>.txt in the current folder).
 """
@@ -30,6 +37,13 @@ USER_AGENT = "ATDR-waf-tests/1.0 (college project; own gateway only)"
 SQLI = "' OR 1=1--"
 XSS = "<script>alert('xss')</script>"
 BURST = 50
+ATTACK_STRINGS = [  # standard, documented WAF test strings (--attack and tests/e2e_run.sh)
+    "' OR 1=1--",
+    "1' UNION SELECT username, password FROM users--",
+    "<script>alert('xss')</script>",
+    "<img src=x onerror=alert(1)>",
+    "<svg/onload=alert(1)>",
+]
 RATE_WINDOW_SECONDS = 60
 
 
@@ -92,17 +106,45 @@ class Run:
         return passed == len(self.results)
 
 
+def attack(run):
+    """The 5 test strings, then the burst. Returns (string statuses, burst statuses)."""
+    hits = []
+    for a in ATTACK_STRINGS:
+        hits.append(run.get("/products", {"search": a}))
+        run.log("[{}] attack search={!r} -> HTTP {}".format(utc_now(), a, hits[-1]))
+    t = time.monotonic()
+    st = [run.get("/products", {"search": "lock"}) for _ in range(BURST)]
+    first = next((i + 1 for i, s in enumerate(st) if s == 403), None)
+    run.log("[{}] burst of {} in {:.1f}s: 200s={} 403s={} first 403 at #{}".format(
+        utc_now(), len(st), time.monotonic() - t, st.count(200), st.count(403), first))
+    run.log("[{}] burst statuses: {}".format(utc_now(), " ".join(map(str, st))))
+    return hits, st
+
+
 def main():
     ap = argparse.ArgumentParser(description="ATDR WAF tests T1-T6 (own gateway only)")
     ap.add_argument("url", help="gateway URL, e.g. http://20.0.0.1/")
     ap.add_argument("--out", default="waf_test_results_{}.txt".format(
         datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")))
+    ap.add_argument("--attack", action="store_true",
+                    help="skip T1-T6; send the 5 test strings + the 50-request burst (triggers both Sentinel rules)")
     args = ap.parse_args()
 
     if not args.url.startswith(("http://", "https://")):
         ap.error("URL must start with http:// or https://")
 
     run = Run(args.url, args.out)
+    if args.attack:
+        run.log("[{}] ATDR attack traffic against {} (results file: {})".format(utc_now(), run.base, args.out))
+        hits, st = attack(run)
+        blocked = hits.count(403) + st.count(403)
+        ok = hits.count(403) == len(ATTACK_STRINGS) and st.count(403) >= 3
+        run.log("[{}] {} {} blocked requests from this laptop's IP (rules need >= 5, and >= 3 rate-limit blocks); {}".format(
+            utc_now(), "OK" if ok else "LOW", blocked,
+            "expect the Sentinel incident in about 6-8 minutes" if ok else "the rules may not fire: run it once more"))
+        run.out.close()
+        sys.exit(0 if ok else 1)
+
     run.log("[{}] ATDR WAF tests against {} (results file: {})".format(utc_now(), run.base, args.out))
 
     run.check("T1", "normal page GET /", run.get("/"), 200)

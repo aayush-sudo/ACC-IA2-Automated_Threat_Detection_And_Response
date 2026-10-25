@@ -158,6 +158,7 @@ backends and drain the suspicious one instead of taking the site down.
 | Dry pre-flight (no traffic) | `bash tests/e2e_run.sh <name> --preflight` |
 | Full automated end-to-end run | `bash tests/e2e_run.sh <name>` |
 | Manual-response baseline | `bash tests/e2e_run.sh <name> --manual` |
+| Watch only (traffic from another laptop) | `bash tests/e2e_run.sh <name> --watch-only`, then on that laptop `python waf_tests.py http://<gateway-ip>/ --attack` |
 | Undo isolation | `bash response/rollback.sh --delete-snapshot` |
 | Close a run's incidents afterwards | `bash tests/e2e_run.sh <name> --close` |
 | WAF tests T1–T6 from any laptop | `python tests/waf_tests.py http://<gateway-ip>/` |

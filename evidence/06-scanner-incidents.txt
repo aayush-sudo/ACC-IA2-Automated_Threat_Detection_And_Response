@@ -31,3 +31,8 @@ ClientIp     requests  http403  firstSeen             lastSeen              ua
 [2026-10-24T23:14:25Z] closing incident #9: incident 9 Closed TruePositive
 [2026-10-24T23:14:34Z] closing incident #8: incident 8 Closed TruePositive
 [2026-10-24T23:14:45Z] closing incident #7: incident 7 Closed TruePositive
+
+## Added 2026-10-25T05:21:19Z: incidents #13/#14 (still open at collection)
+#13 ATDR – Repeated WAF blocks from 165.154.x.x | High | created 2026-10-25T02:38:17Z | Defender incident 11
+#14 ATDR – WAF rate limit triggered by 165.154.x.x | Medium | created 2026-10-25T02:38:30Z | Defender incident 12
+Client 165.154.x.x (libredtail-http): 49 requests from 2026-10-25T02:30:30Z, 47 x 403; no playbook run (automation rule off).

@@ -38,6 +38,21 @@ name with `--out myrun.txt`). The exit code is 0 only if every test passed.
 Your own IP is rate-limited for the rest of that minute after T5, which is expected.
 Run it **once**, not in a loop.
 
+### `--attack`: trigger the Sentinel rules (Person 3 demo)
+
+```sh
+python waf_tests.py http://<gateway-ip>/ --attack
+```
+
+Skips T1–T6 and sends the same 55 requests as one end-to-end run: 5 standard SQLi/XSS
+test strings (`' OR 1=1--`, `1' UNION SELECT username, password FROM users--`,
+`<script>alert('xss')</script>`, `<img src=x onerror=alert(1)>`, `<svg/onload=alert(1)>`),
+then the 50-request burst. It takes about 2 seconds. The last line says `OK` when all 5
+strings got 403 and the burst got at least 3 rate-limit 403s, which is enough for both
+rules (≥ 5 blocked requests from one IP; ≥ 3 RateLimitDemo blocks); the incident appears
+about 6–8 minutes later. The plain run (T1–T6) gives only 2 managed-rule blocks plus the
+burst's rate-limit blocks, so use `--attack` when the rules must fire.
+
 ## `test_app.py`: Flask unit tests (developer machine)
 
 ```sh
