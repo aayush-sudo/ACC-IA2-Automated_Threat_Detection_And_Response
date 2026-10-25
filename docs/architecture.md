@@ -90,7 +90,8 @@ sequenceDiagram
 | | Virtual Machine Contributor | read and tag the VM |
 | | Disk Snapshot Contributor | create the snapshot |
 | Azure Security Insights (Sentinel service) | Microsoft Sentinel Automation Contributor | lets the automation rule start the playbook |
-| Teammates | read-only roles scoped to rg-atdr | view the portal for the demo (no Owner/Contributor) |
+| Aayush (guest) | Microsoft Sentinel Contributor | work with the Sentinel rules and incidents (no Owner/Contributor) |
+| Third teammate (guest) | Reader + Microsoft Sentinel Reader | view the portal for the demo |
 
 There are no keys or passwords in the repository. The Discord webhook URL is
 passed only as a secure deployment parameter, from the environment variable
