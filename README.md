@@ -1,18 +1,43 @@
 # Automated Threat Detection and Response
 
-This repository currently contains the Sentinel monitoring module under
-[`sentinel-rules/`](./sentinel-rules/). It provides KQL detections, sample data,
-an alert contract, onboarding guidance, and local artifact tests.
+This is our Advanced Cloud Computing project on using Microsoft Sentinel to
+identify suspicious activity in Azure. We wrote Kusto Query Language (KQL)
+queries for common security events and prepared sample data and an alert
+format to show how detections could connect to a response workflow.
 
-No Azure resources were created or changed by this repository. Read-only
-verification on 2026-10-20 confirmed the project Log Analytics workspace and
-Microsoft Sentinel onboarding resource. The target tables had no source rows
-in the checked 30-day period; no live Sentinel alert or incident was generated.
-The included sample events and alert payloads are simulations.
+The project files are in [`sentinel-rules/`](./sentinel-rules/). They include
+queries, sample records, tests, and instructions for setting up and reviewing
+the project. The repository does not deploy Azure resources or automatically
+take action on accounts or other resources.
 
-Start with [`sentinel-rules/README.md`](./sentinel-rules/README.md) for status,
-prerequisites, and the demonstration path. See
-[`sentinel-rules/docs/checklist.md`](./sentinel-rules/docs/checklist.md) for the
-delivery checklist and
-[`sentinel-rules/docs/integration.md`](./sentinel-rules/docs/integration.md)
-for Person 1 and Person 3 handoffs.
+## What the project checks
+
+The queries cover these scenarios:
+
+- Repeated blocked web application firewall (WAF) requests and WAF rate-limit
+  events from `AGWFirewallLogs`.
+- Repeated failed Entra ID sign-ins from `SigninLogs`.
+- Defender for Cloud findings from `SecurityAlert`.
+- Repeated failed Azure administrative operations from `AzureActivity`.
+
+We also added standalone queries with inline sample records for Azure
+Activity, WAF, and Entra ID. These let us see the expected query results
+without relying on incoming source logs.
+
+The alert JSON Schema describes the information expected by a future
+response workflow, such as severity, source, timestamp, recommended action,
+and optional resource and Sentinel identifiers. The included examples cover
+four severity levels. The schema describes the data format.
+
+## Project files
+
+- [`sentinel-rules/queries/`](./sentinel-rules/queries/) — detection queries
+  and queries with inline sample data.
+- [`sentinel-rules/tests/`](./sentinel-rules/tests/) — query fixtures and
+  local checks for project files.
+- [`sentinel-rules/alert-contract/`](./sentinel-rules/alert-contract/) —
+  normalized alert JSON Schema.
+- [`sentinel-rules/samples/`](./sentinel-rules/samples/) — sample alerts,
+  response output, and WAF events.
+- [`sentinel-rules/docs/`](./sentinel-rules/docs/) — setup, integration,
+  walkthrough, cost, and project status information.
